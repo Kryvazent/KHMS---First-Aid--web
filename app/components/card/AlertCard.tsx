@@ -7,6 +7,7 @@ import AlertView from "../view/AlertView";
 import DeleteAlert from "../view/DeleteAlert";
 import { FaEdit, FaEye, FaClock, FaGlobe } from "react-icons/fa";
 import { MdDelete, MdSend, MdOutlineDrafts } from "react-icons/md";
+import { Icon } from "../../lib/iconMap";
 import { AlertRow } from "../../types";
 
 type ModalType = "view-alert" | "edit-alert" | "delete-alert" | null;
@@ -29,21 +30,16 @@ export default function AlertCard({
   return (
     <>
       <div className="group relative overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-shadow hover:shadow-md">
-        {/* Color bar from DB alert_type.color */}
         <div
-          className="absolute left-0 top-0 h-full w-1 rounded-l-2xl"
-          style={{ backgroundColor: typeColor }}
+          className="absolute left-0 top-0 h-full w-1"
+          style={{ backgroundColor: typeColor, filter: "brightness(0.85)" }}
         />
 
         <div className="flex flex-col gap-4 p-5 pl-6">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-start gap-3">
-              {/* Icon from DB alert_type.icon */}
-              <span
-                className="material-symbols-rounded mt-0.5 shrink-0 text-xl"
-                style={{ color: typeColor }}
-              >
-                {alert.alert_type?.icon ?? "notifications"}
+              <span className="mt-0.5 shrink-0" style={{ color: typeColor, filter: "brightness(0.7)" }}>
+                <Icon name={alert.alert_type?.icon ?? "notifications"} size={20} />
               </span>
               <div>
                 <p className="text-base font-semibold text-gray-900 leading-snug">
@@ -79,15 +75,13 @@ export default function AlertCard({
 
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-2">
-              {/* Alert type badge */}
               <span
-                className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
-                style={{ backgroundColor: typeColor, color: "#374151" }}
+                className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium text-gray-700"
+                style={{ backgroundColor: typeColor }}
               >
                 {typeLabel}
               </span>
 
-              {/* Send status */}
               <span
                 className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${
                   alert.send
@@ -99,19 +93,16 @@ export default function AlertCard({
                 {alert.send ? "Sent" : "Draft"}
               </span>
 
-              {/* Audience badge */}
               <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">
                 {audienceLabel}
               </span>
             </div>
 
             <div className="flex items-center gap-4 text-xs text-gray-400">
-              {/* District */}
               <span className="flex items-center gap-1.5">
                 <FaGlobe size={11} />
                 {districtLabel}
               </span>
-              {/* Date */}
               <span className="flex items-center gap-1.5">
                 <FaClock size={12} />
                 {new Date(alert.created_at).toLocaleDateString()}

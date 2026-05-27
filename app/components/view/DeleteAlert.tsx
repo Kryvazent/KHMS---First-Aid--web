@@ -19,6 +19,8 @@ export default function DeleteAlert({
   async function handleDelete() {
     setDeleting(true);
     setError("");
+    await supabase.from("alert_draft").delete().eq("alert_id", alertId);
+    await supabase.from("alert_schedule").delete().eq("alert_id", alertId);
     const { error } = await supabase.from("alert").delete().eq("id", alertId);
     setDeleting(false);
     if (error) { setError(error.message); return; }
@@ -39,12 +41,20 @@ export default function DeleteAlert({
         {error && <p className="mt-2 text-xs text-red-500">{error}</p>}
       </div>
       <div className="flex w-full gap-3">
-        <button type="button" onClick={onClose} disabled={deleting}
-          className="flex-1 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-50">
+        <button
+          type="button"
+          onClick={onClose}
+          disabled={deleting}
+          className="flex-1 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+        >
           Cancel
         </button>
-        <button type="button" onClick={handleDelete} disabled={deleting}
-          className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-red-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-600 disabled:bg-red-300">
+        <button
+          type="button"
+          onClick={handleDelete}
+          disabled={deleting}
+          className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-red-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-600 disabled:bg-red-300"
+        >
           {deleting ? (
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
           ) : <MdDelete size={16} />}

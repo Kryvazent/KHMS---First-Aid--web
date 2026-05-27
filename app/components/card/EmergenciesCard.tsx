@@ -6,6 +6,7 @@ import Modal from "../ui/Modal";
 import EmergencyDetailsView from "../view/EmergencieDetailsView";
 import EmergencyForm from "../form/EmergencieForm";
 import DeleteEmergency from "../view/DeleteEmergency";
+import { Icon } from "../../lib/iconMap";
 import { EmergencyRow } from "../../types";
 
 type ModalType = "view-emergency" | "edit-emergency" | "delete-emergency" | null;
@@ -34,9 +35,7 @@ export default function EmergenciesCard({
             className="w-14 h-14 rounded-2xl flex items-center justify-center"
             style={{ backgroundColor: emergency.color ?? "#FEF2F2" }}
           >
-            <span className="material-symbols-rounded text-2xl text-gray-600">
-              {emergency.icon}
-            </span>
+            <Icon name={emergency.icon} size={24} className="text-gray-700" />
           </div>
           <div>
             <h3 className="text-[16px] font-bold text-gray-900">{emergency.name}</h3>

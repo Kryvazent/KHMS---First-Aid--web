@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, KeyboardEvent, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { MdAdd, MdDelete } from "react-icons/md";
 import React from "react";
-import LanguageTabs from "../ui/LanguageTabs";
+import { Icon, POPULAR_ICONS } from "../../lib/iconMap";
 import { supabase } from "../../lib/supabase";
-import { SeverityLevel, EmergencyRow, StepRow, Language, MultiLangText } from "../../types";
+import { SeverityLevel, EmergencyRow, Language, MultiLangText } from "../../types";
+import LanguageTabs from "../ui/LanguageTabs";
 
 const EMPTY_MULTILANG: MultiLangText = { en: "", si: "", ta: "" };
 
@@ -17,7 +18,6 @@ type StepForm = {
   image_url: string;
   video_url: string;
   icon: string;
-  // DB id (for existing steps)
   id?: number;
 };
 
@@ -27,13 +27,17 @@ type Props = {
   onSuccess?: () => void;
 };
 
+const PRESET_COLORS = [
+  "#FEF2F2", "#FFF7ED", "#FFFBEB", "#F0FDF4",
+  "#EFF6FF", "#F5F3FF", "#FDF4FF", "#F0FDFA",
+];
+
 export default function EmergencyForm({ onClose, emergency, onSuccess }: Props) {
   const isEdit = !!emergency;
   const [lang, setLang] = useState<Language>("en");
   const [severityLevels, setSeverityLevels] = useState<SeverityLevel[]>([]);
   const [loadingMeta, setLoadingMeta] = useState(true);
 
-  // Emergency fields
   const [name, setName] = useState<MultiLangText>(
     emergency ? { en: emergency.name, si: "", ta: "" } : { ...EMPTY_MULTILANG }
   );
@@ -43,13 +47,12 @@ export default function EmergencyForm({ onClose, emergency, onSuccess }: Props) 
   const [warning, setWarning] = useState<MultiLangText>(
     emergency ? { en: emergency.warning ?? "", si: "", ta: "" } : { ...EMPTY_MULTILANG }
   );
-  const [icon, setIcon] = useState(emergency?.icon ?? "warning_amber_rounded");
+  const [icon, setIcon] = useState(emergency?.icon ?? "warning");
   const [color, setColor] = useState(emergency?.color ?? "#FEF2F2");
   const [severityLevelId, setSeverityLevelId] = useState<number | "">(
     emergency?.severity_level_id ?? ""
   );
 
-  // Steps
   const [steps, setSteps] = useState<StepForm[]>(() => {
     if (emergency?.steps?.length) {
       return emergency.steps.map((s) => ({
@@ -59,21 +62,19 @@ export default function EmergencyForm({ onClose, emergency, onSuccess }: Props) 
         instruction: { en: s.instruction, si: "", ta: "" },
         image_url: s.image_url ?? "",
         video_url: s.video_url ?? "",
-        icon: s.icon ?? "warning_amber_rounded",
+        icon: s.icon ?? "warning",
         id: s.id,
       }));
     }
-    return [
-      {
-        tempId: Date.now(),
-        step_id: 1,
-        title: { ...EMPTY_MULTILANG },
-        instruction: { ...EMPTY_MULTILANG },
-        image_url: "",
-        video_url: "",
-        icon: "warning_amber_rounded",
-      },
-    ];
+    return [{
+      tempId: Date.now(),
+      step_id: 1,
+      title: { ...EMPTY_MULTILANG },
+      instruction: { ...EMPTY_MULTILANG },
+      image_url: "",
+      video_url: "",
+      icon: "warning",
+    }];
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -82,48 +83,29 @@ export default function EmergencyForm({ onClose, emergency, onSuccess }: Props) 
   useEffect(() => {
     async function load() {
       const { data } = await supabase.from("severity_level").select("*");
-      if (data) setSeverityLevels(data);
+      if (data) setSeverityLevels(data as SeverityLevel[]);
       setLoadingMeta(false);
     }
     load();
   }, []);
 
-  // Material symbols icon picker options
-  const iconOptions = [
-    "warning_amber_rounded", "favorite", "local_fire_department",
-    "bolt", "medication", "psychology", "air", "coronavirus",
-    "broken_bone", "water_drop", "thermostat", "accessible",
-  ];
-
-  const PRESET_COLORS = [
-    "#FEF2F2", "#FFF7ED", "#FFFBEB", "#F0FDF4",
-    "#EFF6FF", "#F5F3FF", "#FDF4FF", "#F0FDFA",
-  ];
-
   function addStep() {
-    setSteps((prev) => [
-      ...prev,
-      {
-        tempId: Date.now(),
-        step_id: prev.length + 1,
-        title: { ...EMPTY_MULTILANG },
-        instruction: { ...EMPTY_MULTILANG },
-        image_url: "",
-        video_url: "",
-        icon: "warning_amber_rounded",
-      },
-    ]);
+    setSteps((prev) => [...prev, {
+      tempId: Date.now(),
+      step_id: prev.length + 1,
+      title: { ...EMPTY_MULTILANG },
+      instruction: { ...EMPTY_MULTILANG },
+      image_url: "",
+      video_url: "",
+      icon: "warning",
+    }]);
   }
 
   function removeStep(tempId: number) {
     setSteps((prev) => prev.filter((s) => s.tempId !== tempId));
   }
 
-  function updateStepMultiLang(
-    tempId: number,
-    field: "title" | "instruction",
-    value: string
-  ) {
+  function updateStepMultiLang(tempId: number, field: "title" | "instruction", value: string) {
     setSteps((prev) =>
       prev.map((s) =>
         s.tempId === tempId
@@ -133,7 +115,7 @@ export default function EmergencyForm({ onClose, emergency, onSuccess }: Props) 
     );
   }
 
-  function updateStep(tempId: number, field: keyof Omit<StepForm, "title" | "instruction" | "tempId" | "id">, value: string | number) {
+  function updateStep(tempId: number, field: "image_url" | "video_url" | "icon", value: string) {
     setSteps((prev) =>
       prev.map((s) => (s.tempId === tempId ? { ...s, [field]: value } : s))
     );
@@ -144,10 +126,8 @@ export default function EmergencyForm({ onClose, emergency, onSuccess }: Props) 
     if (!name.en.trim()) e.name_en = "English name is required.";
     if (!severityLevelId) e.severity = "Severity level is required.";
     steps.forEach((step, i) => {
-      if (!step.instruction.en.trim())
-        e[`step_${i}_instruction_en`] = "English instruction is required.";
-      if (!step.title.en.trim())
-        e[`step_${i}_title_en`] = "English title is required.";
+      if (!step.instruction.en.trim()) e[`step_${i}_instruction_en`] = "English instruction is required.";
+      if (!step.title.en.trim()) e[`step_${i}_title_en`] = "English title is required.";
     });
     return e;
   }
@@ -169,26 +149,16 @@ export default function EmergencyForm({ onClose, emergency, onSuccess }: Props) 
     let emergencyId: number;
 
     if (isEdit && emergency) {
-      const { error } = await supabase
-        .from("emergency")
-        .update(emergencyPayload)
-        .eq("id", emergency.id);
+      const { error } = await supabase.from("emergency").update(emergencyPayload).eq("id", emergency.id);
       if (error) { console.error(error); setSubmitting(false); return; }
       emergencyId = emergency.id;
-
-      // Delete existing steps and re-insert
       await supabase.from("step").delete().eq("emergency_id", emergencyId);
     } else {
-      const { data, error } = await supabase
-        .from("emergency")
-        .insert(emergencyPayload)
-        .select("id")
-        .single();
+      const { data, error } = await supabase.from("emergency").insert(emergencyPayload).select("id").single();
       if (error || !data) { console.error(error); setSubmitting(false); return; }
       emergencyId = data.id;
     }
 
-    // Insert steps
     const stepsPayload = steps.map((s, idx) => ({
       step_id: idx + 1,
       title: s.title.en,
@@ -219,15 +189,11 @@ export default function EmergencyForm({ onClose, emergency, onSuccess }: Props) 
     <>
       <div className="px-7 py-6 flex flex-col gap-6">
 
-        {/* Language Tabs */}
         <div>
-          <label className="text-sm font-semibold text-gray-700 mb-1.5 block">
-            Content Language
-          </label>
+          <label className="text-sm font-semibold text-gray-700 mb-1.5 block">Content Language</label>
           <LanguageTabs active={lang} onChange={setLang} />
         </div>
 
-        {/* Name */}
         <div>
           <label className="text-sm font-semibold text-gray-700 block mb-1.5">
             Emergency Name ({lang.toUpperCase()})
@@ -248,19 +214,12 @@ export default function EmergencyForm({ onClose, emergency, onSuccess }: Props) 
                 : "border-gray-200 focus:border-red-400 focus:ring-red-100"
             }`}
           />
-          {errors.name_en && lang === "en" && (
-            <p className="mt-1 text-xs text-red-500">{errors.name_en}</p>
-          )}
-          {lang !== "en" && (
-            <p className="mt-1 text-xs text-gray-400">English: {name.en || "—"}</p>
-          )}
+          {errors.name_en && lang === "en" && <p className="mt-1 text-xs text-red-500">{errors.name_en}</p>}
+          {lang !== "en" && <p className="mt-1 text-xs text-gray-400">English: {name.en || "—"}</p>}
         </div>
 
-        {/* Subtitle */}
         <div>
-          <label className="text-sm font-semibold text-gray-700 block mb-1.5">
-            Subtitle ({lang.toUpperCase()})
-          </label>
+          <label className="text-sm font-semibold text-gray-700 block mb-1.5">Subtitle ({lang.toUpperCase()})</label>
           <input
             type="text"
             value={subtitle[lang]}
@@ -270,98 +229,89 @@ export default function EmergencyForm({ onClose, emergency, onSuccess }: Props) 
               lang === "ta" ? "உட்தலைப்பு..." :
               "Short description..."
             }
-            className="border border-gray-200 rounded-xl px-4 py-3 text-sm w-full outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100 transition-all"
+            className="border border-gray-200 rounded-xl px-4 py-3 text-sm w-full outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100"
           />
         </div>
 
-        {/* Icon + Color + Severity */}
-        <div className="grid grid-cols-1 gap-5">
-          {/* Icon picker */}
-          <div>
-            <label className="text-sm font-semibold text-gray-700 block mb-2">
-              Icon (Material Symbol name)
-            </label>
-            <div className="grid grid-cols-6 gap-2">
-              {iconOptions.map((ic) => (
-                <button
-                  key={ic}
-                  type="button"
-                  onClick={() => setIcon(ic)}
-                  title={ic}
-                  className={`aspect-square flex items-center justify-center rounded-xl border-2 transition-all ${
-                    icon === ic
-                      ? "border-red-400 bg-red-50 text-red-500"
-                      : "border-gray-200 text-gray-400 hover:border-gray-300"
-                  }`}
-                >
-                  <span className="material-symbols-rounded text-xl">{ic}</span>
-                </button>
-              ))}
-            </div>
+        <div>
+          <label className="text-sm font-semibold text-gray-700 block mb-2">Icon</label>
+          <div className="grid grid-cols-6 gap-2">
+            {POPULAR_ICONS.map((ic) => (
+              <button
+                key={ic}
+                type="button"
+                onClick={() => setIcon(ic)}
+                title={ic}
+                className={`aspect-square flex items-center justify-center rounded-xl border-2 transition-all ${
+                  icon === ic
+                    ? "border-red-400 bg-red-50 text-red-500"
+                    : "border-gray-200 text-gray-400 hover:border-gray-300"
+                }`}
+              >
+                <Icon name={ic} size={20} />
+              </button>
+            ))}
+          </div>
+          <div className="mt-2 flex items-center gap-2">
             <input
               type="text"
               value={icon}
               onChange={(e) => setIcon(e.target.value)}
-              placeholder="Or type icon name..."
-              className="mt-2 border border-gray-200 rounded-xl px-4 py-2 text-sm w-full outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100 transition-all"
+              placeholder="Or type icon name (e.g. heart, fire)..."
+              className="flex-1 border border-gray-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100"
             />
-          </div>
-
-          {/* Color */}
-          <div>
-            <label className="text-sm font-semibold text-gray-700 block mb-2">
-              Background Color
-            </label>
-            <div className="flex gap-2 flex-wrap">
-              {PRESET_COLORS.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setColor(c)}
-                  style={{ backgroundColor: c }}
-                  className={`w-9 h-9 rounded-lg border-2 transition-all ${
-                    color === c ? "border-gray-600 scale-110" : "border-gray-200"
-                  }`}
-                />
-              ))}
-              <input
-                type="color"
-                value={color}
-                onChange={(e) => setColor(e.target.value)}
-                className="w-9 h-9 rounded-lg border border-gray-200 cursor-pointer p-0.5"
-                title="Custom color"
-              />
+            <div className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center text-gray-600 shrink-0">
+              <Icon name={icon} size={18} />
             </div>
-          </div>
-
-          {/* Severity Level */}
-          <div>
-            <label className="text-sm font-semibold text-gray-700 block mb-2">
-              Severity Level <span className="text-red-500">*</span>
-            </label>
-            <div className="flex gap-2">
-              {severityLevels.map((sl) => (
-                <button
-                  key={sl.id}
-                  type="button"
-                  onClick={() => setSeverityLevelId(sl.id)}
-                  className={`flex-1 py-2 rounded-xl text-sm font-semibold border-2 transition-all ${
-                    severityLevelId === sl.id
-                      ? "border-red-400 bg-red-50 text-red-600"
-                      : "border-gray-200 text-gray-500 hover:border-gray-300"
-                  }`}
-                >
-                  {sl.level}
-                </button>
-              ))}
-            </div>
-            {errors.severity && (
-              <p className="mt-1 text-xs text-red-500">{errors.severity}</p>
-            )}
           </div>
         </div>
 
-        {/* Warning */}
+        <div>
+          <label className="text-sm font-semibold text-gray-700 block mb-2">Background Color</label>
+          <div className="flex gap-2 flex-wrap">
+            {PRESET_COLORS.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setColor(c)}
+                style={{ backgroundColor: c }}
+                className={`w-9 h-9 rounded-lg border-2 transition-all ${
+                  color === c ? "border-gray-600 scale-110" : "border-gray-200"
+                }`}
+              />
+            ))}
+            <input
+              type="color"
+              value={color}
+              onChange={(e) => setColor(e.target.value)}
+              className="w-9 h-9 rounded-lg border border-gray-200 cursor-pointer p-0.5"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="text-sm font-semibold text-gray-700 block mb-2">
+            Severity Level <span className="text-red-500">*</span>
+          </label>
+          <div className="flex gap-2 flex-wrap">
+            {severityLevels.map((sl) => (
+              <button
+                key={sl.id}
+                type="button"
+                onClick={() => setSeverityLevelId(sl.id)}
+                className={`flex-1 py-2 px-4 rounded-xl text-sm font-semibold border-2 transition-all ${
+                  severityLevelId === sl.id
+                    ? "border-red-400 bg-red-50 text-red-600"
+                    : "border-gray-200 text-gray-500 hover:border-gray-300"
+                }`}
+              >
+                {sl.level}
+              </button>
+            ))}
+          </div>
+          {errors.severity && <p className="mt-1 text-xs text-red-500">{errors.severity}</p>}
+        </div>
+
         <div>
           <label className="text-sm font-semibold text-gray-700 block mb-1.5">
             Warning Message ({lang.toUpperCase()})
@@ -375,19 +325,14 @@ export default function EmergencyForm({ onClose, emergency, onSuccess }: Props) 
               lang === "ta" ? "எச்சரிக்கை..." :
               "Call emergency services immediately."
             }
-            className="border border-gray-200 rounded-xl px-4 py-3 text-sm w-full outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100 transition-all resize-none"
+            className="border border-gray-200 rounded-xl px-4 py-3 text-sm w-full outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100 resize-none"
           />
-          {lang !== "en" && (
-            <p className="mt-1 text-xs text-gray-400">English: {warning.en || "—"}</p>
-          )}
+          {lang !== "en" && <p className="mt-1 text-xs text-gray-400">English: {warning.en || "—"}</p>}
         </div>
 
-        {/* Steps */}
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <label className="text-sm font-semibold text-gray-700">
-              Step-by-Step Instructions
-            </label>
+            <label className="text-sm font-semibold text-gray-700">Step-by-Step Instructions</label>
             <button
               type="button"
               onClick={addStep}
@@ -404,22 +349,19 @@ export default function EmergencyForm({ onClose, emergency, onSuccess }: Props) 
                   <div className="w-7 h-7 bg-red-100 text-red-500 rounded-full flex items-center justify-center text-xs font-bold">
                     {index + 1}
                   </div>
-                  <span className="text-sm font-semibold text-gray-700">
-                    Step {index + 1}
-                  </span>
+                  <span className="text-sm font-semibold text-gray-700">Step {index + 1}</span>
                 </div>
                 {steps.length > 1 && (
                   <button
                     type="button"
                     onClick={() => removeStep(step.tempId)}
-                    className="text-gray-300 hover:text-red-400 transition-colors"
+                    className="text-gray-300 hover:text-red-400"
                   >
                     <MdDelete size={18} />
                   </button>
                 )}
               </div>
 
-              {/* Step title */}
               <div>
                 <label className="text-xs font-medium text-gray-500 block mb-1">
                   Title ({lang.toUpperCase()})
@@ -434,7 +376,7 @@ export default function EmergencyForm({ onClose, emergency, onSuccess }: Props) 
                   }
                   value={step.title[lang]}
                   onChange={(e) => updateStepMultiLang(step.tempId, "title", e.target.value)}
-                  className={`border rounded-xl px-4 py-2.5 text-sm w-full outline-none focus:ring-2 transition-all ${
+                  className={`border rounded-xl px-4 py-2.5 text-sm w-full outline-none focus:ring-2 ${
                     errors[`step_${index}_title_en`] && lang === "en"
                       ? "border-red-300 focus:border-red-400 focus:ring-red-100"
                       : "border-gray-200 focus:border-red-400 focus:ring-red-100"
@@ -442,7 +384,6 @@ export default function EmergencyForm({ onClose, emergency, onSuccess }: Props) 
                 />
               </div>
 
-              {/* Step instruction */}
               <div>
                 <label className="text-xs font-medium text-gray-500 block mb-1">
                   Instruction ({lang.toUpperCase()})
@@ -457,63 +398,57 @@ export default function EmergencyForm({ onClose, emergency, onSuccess }: Props) 
                   }
                   value={step.instruction[lang]}
                   onChange={(e) => updateStepMultiLang(step.tempId, "instruction", e.target.value)}
-                  className={`border rounded-xl px-4 py-2.5 text-sm w-full outline-none focus:ring-2 transition-all resize-none ${
+                  className={`border rounded-xl px-4 py-2.5 text-sm w-full outline-none focus:ring-2 resize-none ${
                     errors[`step_${index}_instruction_en`] && lang === "en"
                       ? "border-red-300 focus:border-red-400 focus:ring-red-100"
                       : "border-gray-200 focus:border-red-400 focus:ring-red-100"
                   }`}
                 />
                 {errors[`step_${index}_instruction_en`] && lang === "en" && (
-                  <p className="mt-1 text-xs text-red-500">
-                    {errors[`step_${index}_instruction_en`]}
-                  </p>
+                  <p className="mt-1 text-xs text-red-500">{errors[`step_${index}_instruction_en`]}</p>
                 )}
                 {lang !== "en" && (
-                  <p className="mt-1 text-xs text-gray-400">
-                    English: {step.instruction.en || "—"}
-                  </p>
+                  <p className="mt-1 text-xs text-gray-400">English: {step.instruction.en || "—"}</p>
                 )}
               </div>
 
-              {/* Step icon */}
-              <div>
-                <label className="text-xs font-medium text-gray-500 block mb-1">
-                  Step Icon (Material Symbol)
-                </label>
-                <input
-                  type="text"
-                  placeholder="warning_amber_rounded"
-                  value={step.icon}
-                  onChange={(e) => updateStep(step.tempId, "icon", e.target.value)}
-                  className="border border-gray-200 rounded-xl px-4 py-2 text-sm w-full outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100 transition-all"
-                />
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs font-medium text-gray-500 block mb-1">Step Icon</label>
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="text"
+                      placeholder="warning"
+                      value={step.icon}
+                      onChange={(e) => updateStep(step.tempId, "icon", e.target.value)}
+                      className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                    />
+                    <div className="w-9 h-9 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-600 shrink-0">
+                      <Icon name={step.icon} size={16} />
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              {/* Image URL */}
               <div>
-                <label className="text-xs font-medium text-gray-500 block mb-1">
-                  Image URL (optional)
-                </label>
+                <label className="text-xs font-medium text-gray-500 block mb-1">Image URL (optional)</label>
                 <input
                   type="url"
                   placeholder="https://..."
                   value={step.image_url}
                   onChange={(e) => updateStep(step.tempId, "image_url", e.target.value)}
-                  className="border border-gray-200 rounded-xl px-4 py-2 text-sm w-full outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100 transition-all"
+                  className="border border-gray-200 rounded-xl px-4 py-2 text-sm w-full outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100"
                 />
               </div>
 
-              {/* Video URL */}
               <div>
-                <label className="text-xs font-medium text-gray-500 block mb-1">
-                  Video URL (optional)
-                </label>
+                <label className="text-xs font-medium text-gray-500 block mb-1">Video URL (optional)</label>
                 <input
                   type="url"
                   placeholder="https://..."
                   value={step.video_url}
                   onChange={(e) => updateStep(step.tempId, "video_url", e.target.value)}
-                  className="border border-gray-200 rounded-xl px-4 py-2 text-sm w-full outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100 transition-all"
+                  className="border border-gray-200 rounded-xl px-4 py-2 text-sm w-full outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100"
                 />
               </div>
             </div>
@@ -533,7 +468,7 @@ export default function EmergencyForm({ onClose, emergency, onSuccess }: Props) 
           type="button"
           onClick={handleSubmit}
           disabled={submitting}
-          className="px-6 py-2.5 text-white text-sm font-semibold rounded-xl shadow-md transition-all bg-red-500 hover:bg-red-600 disabled:bg-red-300 flex items-center gap-2"
+          className="px-6 py-2.5 text-white text-sm font-semibold rounded-xl shadow-md bg-red-500 hover:bg-red-600 disabled:bg-red-300 flex items-center gap-2"
         >
           {submitting && (
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />

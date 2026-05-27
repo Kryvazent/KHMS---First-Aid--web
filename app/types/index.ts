@@ -43,10 +43,20 @@ export type AlertRow = {
   added_by: number;
   url: string | null;
   district_id: number | null;
-  // joined
   alert_type?: AlertType;
   audience?: Audience;
   district?: District;
+};
+
+export type StepRow = {
+  id: number;
+  step_id: number;
+  title: string;
+  instruction: string;
+  image_url: string | null;
+  video_url: string | null;
+  emergency_id: number;
+  icon: string | null;
 };
 
 export type EmergencyRow = {
@@ -60,15 +70,4 @@ export type EmergencyRow = {
   subtitle: string | null;
   severity_level?: SeverityLevel;
   steps?: StepRow[];
-};
-
-export type StepRow = {
-  id: number;
-  step_id: number;
-  title: string;
-  instruction: string;
-  image_url: string | null;
-  video_url: string | null;
-  emergency_id: number;
-  icon: string | null;
 };

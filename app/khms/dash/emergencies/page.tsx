@@ -8,7 +8,6 @@ import { EmergencyRow } from "@/app/types";
 import { useState, useEffect, useCallback } from "react";
 import { MdSearch } from "react-icons/md";
 
-
 export default function EmergenciesPage() {
   const [emergencies, setEmergencies] = useState<EmergencyRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,11 +20,7 @@ export default function EmergenciesPage() {
     setLoading(true);
     const query = supabase
       .from("emergency")
-      .select(`
-        *,
-        severity_level(*),
-        steps:step(*)
-      `)
+      .select(`*, severity_level(*), steps:step(*)`)
       .order("created_at", { ascending: false });
 
     if (severityFilter) query.eq("severity_level_id", severityFilter);

@@ -7,6 +7,7 @@ import { supabase } from "@/app/lib/supabase";
 import { AlertRow } from "@/app/types";
 import { useState, useEffect, useCallback } from "react";
 
+import { MdSearch } from "react-icons/md";
 
 export default function AlertsPage() {
   const [alerts, setAlerts] = useState<AlertRow[]>([]);
@@ -20,12 +21,7 @@ export default function AlertsPage() {
     setLoading(true);
     const query = supabase
       .from("alert")
-      .select(`
-        *,
-        alert_type(*),
-        audience(*),
-        district(*)
-      `)
+      .select(`*, alert_type(*), audience(*), district(*)`)
       .order("created_at", { ascending: false });
 
     if (typeFilter) query.eq("alert_type_id", typeFilter);
@@ -66,13 +62,16 @@ export default function AlertsPage() {
         </div>
 
         <div className="mb-5 flex gap-3 rounded-xl border border-gray-200 bg-white p-4">
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search alerts..."
-            className="flex-1 bg-transparent text-sm text-gray-700 outline-none placeholder:text-gray-400"
-          />
+          <div className="flex flex-1 items-center gap-2.5">
+            <MdSearch className="text-gray-400 text-xl" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search alerts..."
+              className="flex-1 bg-transparent text-sm text-gray-700 outline-none placeholder:text-gray-400"
+            />
+          </div>
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value ? Number(e.target.value) : "")}

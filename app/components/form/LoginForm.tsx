@@ -19,7 +19,6 @@ export default function LoginForm() {
     setError("");
     setLoading(true);
 
-    // Query user table (plain text password as per your DB schema)
     const { data, error: dbError } = await supabase
       .from("user")
       .select("id, name, username")
@@ -34,7 +33,6 @@ export default function LoginForm() {
       return;
     }
 
-    // Store user session (simple localStorage approach)
     localStorage.setItem("admin_user", JSON.stringify(data));
     router.push(ROUTES.DASHBOARD);
   };
@@ -68,8 +66,11 @@ export default function LoginForm() {
             className="flex-1 text-sm text-gray-800 placeholder-gray-400 outline-none bg-transparent"
             required
           />
-          <button type="button" onClick={() => setShowPassword(!showPassword)}
-            className="text-gray-400 hover:text-gray-600 transition-colors">
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+          >
             {showPassword ? <FiEyeOff /> : <FiEye />}
           </button>
         </div>
@@ -77,8 +78,11 @@ export default function LoginForm() {
 
       {error && <p className="text-red-500 text-xs font-medium -mt-2">{error}</p>}
 
-      <button type="submit" disabled={loading}
-        className="w-full bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white font-semibold py-3.5 rounded-xl transition-all duration-200 shadow-md shadow-red-200 text-sm">
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-full bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white font-semibold py-3.5 rounded-xl transition-all duration-200 shadow-md shadow-red-200 text-sm tracking-wide"
+      >
         {loading ? "Signing in..." : "Sign In"}
       </button>
     </form>

@@ -31,6 +31,7 @@ export default function Sidebar() {
   const router = useRouter();
 
   const handleLogout = () => {
+    localStorage.removeItem("admin_user");
     router.push(ROUTES.LOGIN);
   };
 

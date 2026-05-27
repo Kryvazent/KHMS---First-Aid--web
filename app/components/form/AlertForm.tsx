@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import LanguageTabs from "../ui/LanguageTabs";
+import { Icon } from "../../lib/iconMap";
 import { supabase } from "../../lib/supabase";
 import { AlertType, Audience, District, AlertRow, Language, MultiLangText } from "../../types";
+import LanguageTabs from "../ui/LanguageTabs";
 
 type AlertFormData = {
   title: MultiLangText;
@@ -15,7 +16,6 @@ type AlertFormData = {
   send: boolean;
   schedule: boolean;
   send_at: string;
-  save_as_draft: boolean;
 };
 
 function FieldLabel({ label, required }: { label: string; required?: boolean }) {
@@ -61,7 +61,6 @@ export default function AlertForm({
     send: alert?.send ?? false,
     schedule: false,
     send_at: "",
-    save_as_draft: false,
   });
 
   const [errors, setErrors] = useState<Partial<Record<string, string>>>({});
@@ -75,9 +74,9 @@ export default function AlertForm({
         supabase.from("audience").select("*"),
         supabase.from("district").select("*"),
       ]);
-      if (typesRes.data) setAlertTypes(typesRes.data);
-      if (audiencesRes.data) setAudiences(audiencesRes.data);
-      if (districtsRes.data) setDistricts(districtsRes.data);
+      if (typesRes.data) setAlertTypes(typesRes.data as AlertType[]);
+      if (audiencesRes.data) setAudiences(audiencesRes.data as Audience[]);
+      if (districtsRes.data) setDistricts(districtsRes.data as District[]);
       setLoadingMeta(false);
     }
     loadMeta();
@@ -116,8 +115,9 @@ export default function AlertForm({
     }
     setSubmitting(true);
 
-    // Combine multilang: store as JSON string or use en as primary (adapt to your needs)
-    // Here we store English as the primary `title` and `alert`, with lang variants in JSON
+    const stored = localStorage.getItem("admin_user");
+    const user = stored ? JSON.parse(stored) : { id: 1 };
+
     const payload = {
       title: form.title.en,
       alert: form.alert.en,
@@ -126,34 +126,25 @@ export default function AlertForm({
       district_id: form.district_id ? Number(form.district_id) : null,
       url: form.url || null,
       send: asDraft ? false : form.send,
-      added_by: 1, // replace with actual logged-in user id
+      added_by: user.id,
     };
 
     let alertId: number | null = null;
 
     if (isEdit && alert) {
-      const { error } = await supabase
-        .from("alert")
-        .update(payload)
-        .eq("id", alert.id);
+      const { error } = await supabase.from("alert").update(payload).eq("id", alert.id);
       if (error) { console.error(error); setSubmitting(false); return; }
       alertId = alert.id;
     } else {
-      const { data, error } = await supabase
-        .from("alert")
-        .insert(payload)
-        .select("id")
-        .single();
+      const { data, error } = await supabase.from("alert").insert(payload).select("id").single();
       if (error || !data) { console.error(error); setSubmitting(false); return; }
       alertId = data.id;
     }
 
-    // Save draft
     if (asDraft && alertId) {
       await supabase.from("alert_draft").insert({ alert_id: alertId });
     }
 
-    // Save schedule
     if (form.schedule && form.send_at && alertId) {
       await supabase.from("alert_schedule").insert({
         alert_id: alertId,
@@ -176,13 +167,11 @@ export default function AlertForm({
 
   return (
     <div className="flex flex-col gap-5 p-6">
-      {/* Language Tabs */}
       <div>
         <FieldLabel label="Content Language" />
         <LanguageTabs active={lang} onChange={setLang} />
       </div>
 
-      {/* Title */}
       <div>
         <FieldLabel label={`Title (${lang.toUpperCase()})`} required={lang === "en"} />
         <input
@@ -194,7 +183,7 @@ export default function AlertForm({
             lang === "ta" ? "தலைப்பை உள்ளிடுக..." :
             "e.g. Heat Wave Warning"
           }
-          className={`w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-offset-0 ${
+          className={`w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition focus:ring-2 ${
             errors[`title_${lang}`]
               ? "border-red-300 focus:border-red-400 focus:ring-red-100"
               : "border-gray-200 focus:border-blue-400 focus:ring-blue-100"
@@ -202,13 +191,10 @@ export default function AlertForm({
         />
         <ErrorMsg msg={errors[`title_${lang}`]} />
         {lang !== "en" && (
-          <p className="mt-1 text-xs text-gray-400">
-            English: {form.title.en || "—"}
-          </p>
+          <p className="mt-1 text-xs text-gray-400">English: {form.title.en || "—"}</p>
         )}
       </div>
 
-      {/* Alert message */}
       <div>
         <FieldLabel label={`Message (${lang.toUpperCase()})`} required={lang === "en"} />
         <textarea
@@ -217,10 +203,10 @@ export default function AlertForm({
           placeholder={
             lang === "si" ? "විස්තරය ඇතුළත් කරන්න..." :
             lang === "ta" ? "விவரங்களை உள்ளிடுக..." :
-            "Describe the alert in detail..."
+            "Describe the alert..."
           }
           rows={3}
-          className={`w-full resize-none rounded-lg border px-3.5 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-offset-0 ${
+          className={`w-full resize-none rounded-lg border px-3.5 py-2.5 text-sm outline-none transition focus:ring-2 ${
             errors[`alert_${lang}`]
               ? "border-red-300 focus:border-red-400 focus:ring-red-100"
               : "border-gray-200 focus:border-blue-400 focus:ring-blue-100"
@@ -229,7 +215,6 @@ export default function AlertForm({
         <ErrorMsg msg={errors[`alert_${lang}`]} />
       </div>
 
-      {/* Alert Type */}
       <div>
         <FieldLabel label="Alert Type" required />
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -240,7 +225,6 @@ export default function AlertForm({
               onClick={() => handleChange("alert_type_id", t.id)}
               style={{
                 backgroundColor: form.alert_type_id === t.id ? t.color : undefined,
-                borderColor: form.alert_type_id === t.id ? t.color : undefined,
               }}
               className={`flex flex-col items-center gap-1.5 rounded-lg border-2 px-2 py-2.5 text-xs font-medium transition-all ${
                 form.alert_type_id === t.id
@@ -248,7 +232,7 @@ export default function AlertForm({
                   : "border-gray-200 bg-white text-gray-500 hover:border-gray-300"
               }`}
             >
-              <span className="material-symbols-rounded text-lg">{t.icon}</span>
+              <Icon name={t.icon} size={18} />
               {t.type}
             </button>
           ))}
@@ -256,13 +240,12 @@ export default function AlertForm({
         <ErrorMsg msg={errors.alert_type_id} />
       </div>
 
-      {/* Audience */}
       <div>
         <FieldLabel label="Audience" required />
         <select
           value={form.audience_id}
           onChange={(e) => handleChange("audience_id", e.target.value)}
-          className={`w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-offset-0 ${
+          className={`w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition focus:ring-2 ${
             errors.audience_id
               ? "border-red-300 focus:border-red-400 focus:ring-red-100"
               : "border-gray-200 focus:border-blue-400 focus:ring-blue-100"
@@ -276,13 +259,12 @@ export default function AlertForm({
         <ErrorMsg msg={errors.audience_id} />
       </div>
 
-      {/* District (optional) */}
       <div>
         <FieldLabel label="District (optional)" />
         <select
           value={form.district_id}
           onChange={(e) => handleChange("district_id", e.target.value)}
-          className="w-full rounded-lg border border-gray-200 px-3.5 py-2.5 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:ring-offset-0"
+          className="w-full rounded-lg border border-gray-200 px-3.5 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition"
         >
           <option value="">All Districts</option>
           {districts.map((d) => (
@@ -291,7 +273,6 @@ export default function AlertForm({
         </select>
       </div>
 
-      {/* URL */}
       <div>
         <FieldLabel label="Reference URL (optional)" />
         <input
@@ -299,11 +280,10 @@ export default function AlertForm({
           value={form.url}
           onChange={(e) => handleChange("url", e.target.value)}
           placeholder="https://..."
-          className="w-full rounded-lg border border-gray-200 px-3.5 py-2.5 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:ring-offset-0"
+          className="w-full rounded-lg border border-gray-200 px-3.5 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition"
         />
       </div>
 
-      {/* Send toggle */}
       <div className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3">
         <div>
           <p className="text-sm font-medium text-gray-800">Send Immediately</p>
@@ -324,7 +304,6 @@ export default function AlertForm({
         </button>
       </div>
 
-      {/* Schedule */}
       <div className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3">
         <div>
           <p className="text-sm font-medium text-gray-800">Schedule Alert</p>
@@ -352,7 +331,7 @@ export default function AlertForm({
             type="datetime-local"
             value={form.send_at}
             onChange={(e) => handleChange("send_at", e.target.value)}
-            className={`w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-offset-0 ${
+            className={`w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition focus:ring-2 ${
               errors.send_at
                 ? "border-red-300 focus:border-red-400 focus:ring-red-100"
                 : "border-gray-200 focus:border-blue-400 focus:ring-blue-100"
@@ -362,12 +341,11 @@ export default function AlertForm({
         </div>
       )}
 
-      {/* Actions */}
       <div className="flex gap-3 border-t border-gray-100 pt-4">
         <button
           type="button"
           onClick={onClose}
-          className="flex-1 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50"
+          className="flex-1 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50"
         >
           Cancel
         </button>
@@ -376,7 +354,7 @@ export default function AlertForm({
             type="button"
             onClick={() => handleSubmit(true)}
             disabled={submitting}
-            className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-50"
+            className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50"
           >
             Save Draft
           </button>

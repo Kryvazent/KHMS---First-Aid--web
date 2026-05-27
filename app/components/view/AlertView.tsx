@@ -1,6 +1,7 @@
 import React from "react";
 import { FaTag, FaGlobe, FaClock, FaUsers, FaHashtag, FaLink } from "react-icons/fa";
 import { MdSend, MdOutlineDrafts } from "react-icons/md";
+import { Icon } from "../../lib/iconMap";
 import { AlertRow } from "../../types";
 
 function MetaRow({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
@@ -22,18 +23,13 @@ export default function AlertView({ alert }: { alert: AlertRow }) {
 
   return (
     <div className="flex flex-col gap-5 p-6">
-      {/* Message preview */}
       <div
         className="relative overflow-hidden rounded-xl border border-gray-100 p-5"
         style={{ backgroundColor: typeColor }}
       >
-        <div
-          className="absolute left-0 top-0 h-full w-1"
-          style={{ backgroundColor: typeColor, filter: "brightness(0.7)" }}
-        />
-        <div className="flex items-start gap-3 pl-2">
-          <span className="material-symbols-rounded text-2xl mt-0.5 shrink-0 text-gray-700">
-            {alert.alert_type?.icon ?? "notifications"}
+        <div className="flex items-start gap-3">
+          <span className="mt-0.5 shrink-0 text-gray-700">
+            <Icon name={alert.alert_type?.icon ?? "notifications"} size={24} />
           </span>
           <div className="min-w-0 flex-1">
             <h3 className="mb-1 text-base font-semibold text-gray-900">{alert.title}</h3>
@@ -42,11 +38,10 @@ export default function AlertView({ alert }: { alert: AlertRow }) {
         </div>
       </div>
 
-      {/* Meta */}
       <div className="divide-y divide-gray-100 rounded-xl border border-gray-100 bg-white px-4">
         <MetaRow icon={<FaTag size={14} />} label="Type">
           <span
-            className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+            className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium text-gray-700"
             style={{ backgroundColor: typeColor }}
           >
             {alert.alert_type?.type ?? "—"}
