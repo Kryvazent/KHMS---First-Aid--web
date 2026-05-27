@@ -4,10 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FiUser, FiLock, FiEye, FiEyeOff } from "react-icons/fi";
 import { ROUTES } from "../../constants/routes";
+import { supabase } from "../../lib/supabase";
 
 export default function LoginForm() {
   const router = useRouter();
-
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -19,22 +19,28 @@ export default function LoginForm() {
     setError("");
     setLoading(true);
 
-    await new Promise((r) => setTimeout(r, 800));
+    const { data, error: dbError } = await supabase
+      .from("user")
+      .select("id, name, username, role")
+      .eq("username", username)
+      .eq("password", password)
+      .single();
 
-    if (username === "admin" && password === "admin123") {
-      router.push(ROUTES.DASHBOARD);
-    } else {
+    setLoading(false);
+
+    if (dbError || !data) {
       setError("Invalid username or password.");
-      setLoading(false);
+      return;
     }
+
+    localStorage.setItem("admin_user", JSON.stringify(data));
+    router.push(ROUTES.DASHBOARD);
   };
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-semibold text-gray-700">
-          Username
-        </label>
+        <label className="text-sm font-semibold text-gray-700">Username</label>
         <div className="flex items-center gap-3 border border-gray-200 rounded-xl px-4 py-3 focus-within:border-red-400 focus-within:ring-2 focus-within:ring-red-100 transition-all">
           <FiUser className="text-gray-400 text-lg shrink-0" />
           <input
@@ -49,9 +55,7 @@ export default function LoginForm() {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-semibold text-gray-700">
-          Password
-        </label>
+        <label className="text-sm font-semibold text-gray-700">Password</label>
         <div className="flex items-center gap-3 border border-gray-200 rounded-xl px-4 py-3 focus-within:border-red-400 focus-within:ring-2 focus-within:ring-red-100 transition-all">
           <FiLock className="text-gray-400 text-lg shrink-0" />
           <input
@@ -72,9 +76,7 @@ export default function LoginForm() {
         </div>
       </div>
 
-      {error && (
-        <p className="text-red-500 text-xs font-medium -mt-2">{error}</p>
-      )}
+      {error && <p className="text-red-500 text-xs font-medium -mt-2">{error}</p>}
 
       <button
         type="submit"
@@ -83,18 +85,6 @@ export default function LoginForm() {
       >
         {loading ? "Signing in..." : "Sign In"}
       </button>
-
-      <div className="mt-5 bg-blue-50 rounded-xl px-4 py-3.5">
-        <p className="text-blue-700 text-sm font-semibold mb-1">
-          Demo Credentials:
-        </p>
-        <p className="text-gray-600 text-sm">
-          Username: <span className="font-bold text-blue-700">admin</span>
-        </p>
-        <p className="text-gray-600 text-sm">
-          Password: <span className="font-bold text-blue-700">admin123</span>
-        </p>
-      </div>
     </form>
   );
 }

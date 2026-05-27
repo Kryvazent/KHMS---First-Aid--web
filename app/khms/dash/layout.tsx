@@ -1,4 +1,4 @@
-import Sidebar from "../../components/layout/Sidebar";
+import Sidebar from "@/app/components/layout/Sidebar";
 
 export default function AdminLayout({
   children,
@@ -10,7 +10,6 @@ export default function AdminLayout({
       <div className="fixed inset-y-0 left-0 z-30">
         <Sidebar />
       </div>
-
       <main className="flex-1 ml-[var(--sidebar-width,16rem)] overflow-y-auto bg-gray-50 p-8">
         {children}
       </main>

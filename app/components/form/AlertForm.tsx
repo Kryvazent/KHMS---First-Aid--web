@@ -1,51 +1,21 @@
-import React, { useState } from "react";
+"use client";
 
-type AlertType = "Info" | "Warning" | "Critical" | "Success";
-type AlertPriority = "High" | "Medium" | "Low";
+import React, { useState, useEffect } from "react";
+import { Icon } from "../../lib/iconMap";
+import { supabase } from "../../lib/supabase";
+import { AlertType, Audience, District, AlertRow, Language, MultiLangText } from "../../types";
+import LanguageTabs from "../ui/LanguageTabs";
 
 type AlertFormData = {
-  title: string;
-  message: string;
-  type: AlertType;
-  priority: AlertPriority | "";
-  recipients: string;
-  date: string;
-};
-
-type Alert = {
-  id: number;
-  title: string;
-  message: string;
-  type: AlertType;
-  priority?: AlertPriority;
-  recipients?: number;
-  date: string;
-};
-
-const TYPE_OPTIONS: { value: AlertType; label: string; icon: string; color: string }[] = [
-  { value: "Info", label: "Info", icon: "ti-info-circle", color: "text-blue-600 bg-blue-50 border-blue-200" },
-  { value: "Warning", label: "Warning", icon: "ti-alert-triangle", color: "text-amber-600 bg-amber-50 border-amber-200" },
-  { value: "Critical", label: "Critical", icon: "ti-alert-octagon", color: "text-red-600 bg-red-50 border-red-200" },
-  { value: "Success", label: "Success", icon: "ti-circle-check", color: "text-green-600 bg-green-50 border-green-200" },
-];
-
-const PRIORITY_OPTIONS: { value: AlertPriority; label: string; color: string }[] = [
-  { value: "Low", label: "Low", color: "text-green-600 bg-green-50 border-green-200" },
-  { value: "Medium", label: "Medium", color: "text-amber-600 bg-amber-50 border-amber-200" },
-  { value: "High", label: "High", color: "text-red-600 bg-red-50 border-red-200" },
-];
-
-const SELECTED_TYPE_STYLES: Record<AlertType, string> = {
-  Info: "border-blue-400 bg-blue-50 text-blue-700",
-  Warning: "border-amber-400 bg-amber-50 text-amber-700",
-  Critical: "border-red-400 bg-red-50 text-red-700",
-  Success: "border-green-400 bg-green-50 text-green-700",
-};
-
-const SELECTED_PRIORITY_STYLES: Record<AlertPriority, string> = {
-  Low: "border-green-400 bg-green-50 text-green-700",
-  Medium: "border-amber-400 bg-amber-50 text-amber-700",
-  High: "border-red-400 bg-red-50 text-red-700",
+  title: MultiLangText;
+  alert: MultiLangText;
+  alert_type_id: number | "";
+  audience_id: number | "";
+  district_id: number | "";
+  url: string;
+  send: boolean;
+  schedule: boolean;
+  send_at: string;
 };
 
 function FieldLabel({ label, required }: { label: string; required?: boolean }) {
@@ -62,213 +32,356 @@ function ErrorMsg({ msg }: { msg?: string }) {
   return <p className="mt-1 text-xs text-red-500">{msg}</p>;
 }
 
+const EMPTY_MULTILANG: MultiLangText = { en: "", si: "", ta: "" };
+
 export default function AlertForm({
   onClose,
   alert,
+  onSuccess,
 }: {
   onClose: () => void;
-  alert?: Alert;
+  alert?: AlertRow;
+  onSuccess?: () => void;
 }) {
   const isEdit = !!alert;
+  const [lang, setLang] = useState<Language>("en");
+
+  const [alertTypes, setAlertTypes] = useState<AlertType[]>([]);
+  const [audiences, setAudiences] = useState<Audience[]>([]);
+  const [districts, setDistricts] = useState<District[]>([]);
+  const [loadingMeta, setLoadingMeta] = useState(true);
 
   const [form, setForm] = useState<AlertFormData>({
-    title: alert?.title ?? "",
-    message: alert?.message ?? "",
-    type: alert?.type ?? "Info",
-    priority: alert?.priority ?? "",
-    recipients: alert?.recipients?.toString() ?? "",
-    date: alert?.date ?? new Date().toISOString().slice(0, 16),
+    title: alert ? { en: alert.title, si: "", ta: "" } : { ...EMPTY_MULTILANG },
+    alert: alert ? { en: alert.alert, si: "", ta: "" } : { ...EMPTY_MULTILANG },
+    alert_type_id: alert?.alert_type_id ?? "",
+    audience_id: alert?.audience_id ?? "",
+    district_id: alert?.district_id ?? "",
+    url: alert?.url ?? "",
+    send: alert?.send ?? false,
+    schedule: false,
+    send_at: "",
   });
 
-  const [errors, setErrors] = useState<Partial<Record<keyof AlertFormData, string>>>({});
+  const [errors, setErrors] = useState<Partial<Record<string, string>>>({});
   const [submitting, setSubmitting] = useState(false);
 
+  useEffect(() => {
+    async function loadMeta() {
+      setLoadingMeta(true);
+      const [typesRes, audiencesRes, districtsRes] = await Promise.all([
+        supabase.from("alert_type").select("*"),
+        supabase.from("audience").select("*"),
+        supabase.from("district").select("*"),
+      ]);
+      if (typesRes.data) setAlertTypes(typesRes.data as AlertType[]);
+      if (audiencesRes.data) setAudiences(audiencesRes.data as Audience[]);
+      if (districtsRes.data) setDistricts(districtsRes.data as District[]);
+      setLoadingMeta(false);
+    }
+    loadMeta();
+  }, []);
+
+  async function triggerNotification(alertId: number) {
+    try {
+      const res = await fetch("/api/send-notification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ alert_id: alertId }),
+      });
+      return await res.json();
+    } catch (err) {
+      console.error("Notification failed:", err);
+      return { success: false };
+    }
+  }
+
+  function setMultiLang(field: "title" | "alert", value: string) {
+    setForm((prev) => ({
+      ...prev,
+      [field]: { ...prev[field], [lang]: value },
+    }));
+    if (errors[`${field}_${lang}`]) {
+      setErrors((prev) => ({ ...prev, [`${field}_${lang}`]: undefined }));
+    }
+  }
+
+  function handleChange(field: keyof AlertFormData, value: unknown) {
+    setForm((prev) => ({ ...prev, [field]: value }));
+    if (errors[field as string]) setErrors((prev) => ({ ...prev, [field]: undefined }));
+  }
+
   function validate() {
-    const e: Partial<Record<keyof AlertFormData, string>> = {};
-    if (!form.title.trim()) e.title = "Title is required.";
-    else if (form.title.trim().length < 3) e.title = "Title must be at least 3 characters.";
-    if (!form.message.trim()) e.message = "Message is required.";
-    else if (form.message.trim().length < 10) e.message = "Message must be at least 10 characters.";
-    if (!form.type) e.type = "Please select a type.";
-    if (form.recipients && isNaN(Number(form.recipients)))
-      e.recipients = "Must be a valid number.";
-    if (!form.date) e.date = "Date is required.";
+    const e: Record<string, string> = {};
+    if (!form.title.en.trim()) e["title_en"] = "English title is required.";
+    if (!form.alert.en.trim()) e["alert_en"] = "English message is required.";
+    if (!form.alert_type_id) e.alert_type_id = "Please select an alert type.";
+    if (!form.audience_id) e.audience_id = "Please select an audience.";
+    if (form.schedule && !form.send_at) e.send_at = "Schedule date/time is required.";
     return e;
   }
 
-  function handleChange(field: keyof AlertFormData, value: string) {
-    setForm((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
-  }
-
-  async function handleSubmit() {
+  async function handleSubmit(asDraft = false) {
     const e = validate();
     if (Object.keys(e).length > 0) {
       setErrors(e);
       return;
     }
     setSubmitting(true);
-    await new Promise((r) => setTimeout(r, 600));
+
+    const stored = localStorage.getItem("admin_user");
+    const user = stored ? JSON.parse(stored) : { id: 1 };
+
+    const payload = {
+      title: form.title.en,
+      alert: form.alert.en,
+      alert_type_id: Number(form.alert_type_id),
+      audience_id: Number(form.audience_id),
+      district_id: form.district_id ? Number(form.district_id) : null,
+      url: form.url || null,
+      send: asDraft ? false : form.send,
+      added_by: user.id,
+    };
+
+    let alertId: number | null = null;
+
+    if (isEdit && alert) {
+      const { error } = await supabase.from("alert").update(payload).eq("id", alert.id);
+      if (error) { console.error(error); setSubmitting(false); return; }
+      alertId = alert.id;
+    } else {
+      const { data, error } = await supabase.from("alert").insert(payload).select("id").single();
+      if (error || !data) { console.error(error); setSubmitting(false); return; }
+      alertId = data.id;
+    }
+
+    if (asDraft && alertId) {
+      await supabase.from("alert_draft").insert({ alert_id: alertId });
+    }
+
+    if (form.schedule && form.send_at && alertId) {
+      await supabase.from("alert_schedule").insert({
+        alert_id: alertId,
+        send_at: new Date(form.send_at).toISOString(),
+      });
+    }
+
+    if (alertId && form.send && !asDraft && !form.schedule) {
+      const notif = await triggerNotification(alertId);
+      if (notif.success) {
+        console.log(`Notification sent to ${notif.recipients} devices`);
+      }
+    }
     setSubmitting(false);
+    onSuccess?.();
     onClose();
   }
 
+  if (loadingMeta) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-red-500 border-t-transparent" />
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col gap-5 p-8">
+    <div className="flex flex-col gap-5 p-6">
       <div>
-        <FieldLabel label="Title" required />
+        <FieldLabel label="Content Language" />
+        <LanguageTabs active={lang} onChange={setLang} />
+      </div>
+
+      <div>
+        <FieldLabel label={`Title (${lang.toUpperCase()})`} required={lang === "en"} />
         <input
           type="text"
-          value={form.title}
-          onChange={(e) => handleChange("title", e.target.value)}
-          placeholder="e.g. Heat Wave Warning"
-          className={`w-full rounded-lg border px-3.5 py-2.5 text-sm text-gray-800 outline-none transition placeholder:text-gray-400 focus:ring-2 focus:ring-offset-0 ${
-            errors.title
-              ? "border-red-300 focus:border-red-400 focus:ring-red-100"
-              : "border-gray-200 focus:border-blue-400 focus:ring-blue-100"
-          }`}
+          value={form.title[lang]}
+          onChange={(e) => setMultiLang("title", e.target.value)}
+          placeholder={
+            lang === "si" ? "මාතෘකාව ඇතුළත් කරන්න..." :
+              lang === "ta" ? "தலைப்பை உள்ளிடுக..." :
+                "e.g. Heat Wave Warning"
+          }
+          className={`w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition focus:ring-2 ${errors[`title_${lang}`]
+            ? "border-red-300 focus:border-red-400 focus:ring-red-100"
+            : "border-gray-200 focus:border-blue-400 focus:ring-blue-100"
+            }`}
         />
-        <ErrorMsg msg={errors.title} />
+        <ErrorMsg msg={errors[`title_${lang}`]} />
+        {lang !== "en" && (
+          <p className="mt-1 text-xs text-gray-400">English: {form.title.en || "—"}</p>
+        )}
       </div>
 
       <div>
-        <FieldLabel label="Message" required />
+        <FieldLabel label={`Message (${lang.toUpperCase()})`} required={lang === "en"} />
         <textarea
-          value={form.message}
-          onChange={(e) => handleChange("message", e.target.value)}
-          placeholder="Describe the alert in detail..."
+          value={form.alert[lang]}
+          onChange={(e) => setMultiLang("alert", e.target.value)}
+          placeholder={
+            lang === "si" ? "විස්තරය ඇතුළත් කරන්න..." :
+              lang === "ta" ? "விவரங்களை உள்ளிடுக..." :
+                "Describe the alert..."
+          }
           rows={3}
-          className={`w-full resize-none rounded-lg border px-3.5 py-2.5 text-sm text-gray-800 outline-none transition placeholder:text-gray-400 focus:ring-2 focus:ring-offset-0 ${
-            errors.message
-              ? "border-red-300 focus:border-red-400 focus:ring-red-100"
-              : "border-gray-200 focus:border-blue-400 focus:ring-blue-100"
-          }`}
+          className={`w-full resize-none rounded-lg border px-3.5 py-2.5 text-sm outline-none transition focus:ring-2 ${errors[`alert_${lang}`]
+            ? "border-red-300 focus:border-red-400 focus:ring-red-100"
+            : "border-gray-200 focus:border-blue-400 focus:ring-blue-100"
+            }`}
         />
-        <div className="mt-1 flex items-center justify-between">
-          <ErrorMsg msg={errors.message} />
-          <span className="ml-auto text-xs text-gray-400">{form.message.length} chars</span>
-        </div>
+        <ErrorMsg msg={errors[`alert_${lang}`]} />
       </div>
 
       <div>
-        <FieldLabel label="Type" required />
-        <div className="grid grid-cols-4 gap-2">
-          {TYPE_OPTIONS.map((opt) => {
-            const isSelected = form.type === opt.value;
-            return (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => handleChange("type", opt.value)}
-                className={`flex flex-col items-center gap-1.5 rounded-lg border px-2 py-2.5 text-xs font-medium transition-all ${
-                  isSelected
-                    ? SELECTED_TYPE_STYLES[opt.value] + " border-2"
-                    : "border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50"
+        <FieldLabel label="Alert Type" required />
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {alertTypes.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => handleChange("alert_type_id", t.id)}
+              style={{
+                backgroundColor: form.alert_type_id === t.id ? t.color : undefined,
+              }}
+              className={`flex flex-col items-center gap-1.5 rounded-lg border-2 px-2 py-2.5 text-xs font-medium transition-all ${form.alert_type_id === t.id
+                ? "border-current text-gray-800"
+                : "border-gray-200 bg-white text-gray-500 hover:border-gray-300"
                 }`}
-              >
-                <i className={`ti ${opt.icon} text-lg`} aria-hidden="true" />
-                {opt.label}
-              </button>
-            );
-          })}
+            >
+              <Icon name={t.icon} size={18} />
+              {t.type}
+            </button>
+          ))}
         </div>
-        <ErrorMsg msg={errors.type} />
+        <ErrorMsg msg={errors.alert_type_id} />
       </div>
 
       <div>
-        <FieldLabel label="Priority" />
-        <div className="flex gap-2">
-          {PRIORITY_OPTIONS.map((opt) => {
-            const isSelected = form.priority === opt.value;
-            return (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() =>
-                  handleChange("priority", isSelected ? "" : opt.value)
-                }
-                className={`flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-all ${
-                  isSelected
-                    ? SELECTED_PRIORITY_STYLES[opt.value] + " border-2"
-                    : "border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50"
-                }`}
-              >
-                {opt.label}
-              </button>
-            );
-          })}
-        </div>
+        <FieldLabel label="Audience" required />
+        <select
+          value={form.audience_id}
+          onChange={(e) => handleChange("audience_id", e.target.value)}
+          className={`w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition focus:ring-2 ${errors.audience_id
+            ? "border-red-300 focus:border-red-400 focus:ring-red-100"
+            : "border-gray-200 focus:border-blue-400 focus:ring-blue-100"
+            }`}
+        >
+          <option value="">Select audience...</option>
+          {audiences.map((a) => (
+            <option key={a.id} value={a.id}>{a.audience}</option>
+          ))}
+        </select>
+        <ErrorMsg msg={errors.audience_id} />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div>
+        <FieldLabel label="District (optional)" />
+        <select
+          value={form.district_id}
+          onChange={(e) => handleChange("district_id", e.target.value)}
+          className="w-full rounded-lg border border-gray-200 px-3.5 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition"
+        >
+          <option value="">All Districts</option>
+          {districts.map((d) => (
+            <option key={d.id} value={d.id}>{d.name} ({d.province})</option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <FieldLabel label="Reference URL (optional)" />
+        <input
+          type="url"
+          value={form.url}
+          onChange={(e) => handleChange("url", e.target.value)}
+          placeholder="https://..."
+          className="w-full rounded-lg border border-gray-200 px-3.5 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition"
+        />
+      </div>
+
+      <div className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3">
         <div>
-          <FieldLabel label="Recipients" />
-          <div className="relative">
-            <i
-              className="ti ti-users absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-              aria-hidden="true"
-            />
-            <input
-              type="number"
-              min={0}
-              value={form.recipients}
-              onChange={(e) => handleChange("recipients", e.target.value)}
-              placeholder="0"
-              className={`w-full rounded-lg border py-2.5 pl-8 pr-3.5 text-sm text-gray-800 outline-none transition placeholder:text-gray-400 focus:ring-2 focus:ring-offset-0 ${
-                errors.recipients
-                  ? "border-red-300 focus:border-red-400 focus:ring-red-100"
-                  : "border-gray-200 focus:border-blue-400 focus:ring-blue-100"
+          <p className="text-sm font-medium text-gray-800">Send Immediately</p>
+          <p className="text-xs text-gray-400">Push to all selected audiences now</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => handleChange("send", !form.send)}
+          className={`relative h-6 w-11 rounded-full transition-colors ${form.send ? "bg-red-500" : "bg-gray-200"
+            }`}
+        >
+          <span
+            className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${form.send ? "translate-x-5" : "translate-x-0"
               }`}
-            />
-          </div>
-          <ErrorMsg msg={errors.recipients} />
-        </div>
+          />
+        </button>
+      </div>
 
+      <div className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3">
         <div>
-          <FieldLabel label="Date & Time" required />
+          <p className="text-sm font-medium text-gray-800">Schedule Alert</p>
+          <p className="text-xs text-gray-400">Send at a specific date/time</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => handleChange("schedule", !form.schedule)}
+          className={`relative h-6 w-11 rounded-full transition-colors ${form.schedule ? "bg-blue-500" : "bg-gray-200"
+            }`}
+        >
+          <span
+            className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${form.schedule ? "translate-x-5" : "translate-x-0"
+              }`}
+          />
+        </button>
+      </div>
+
+      {form.schedule && (
+        <div>
+          <FieldLabel label="Schedule Date & Time" required />
           <input
             type="datetime-local"
-            value={form.date}
-            onChange={(e) => handleChange("date", e.target.value)}
-            className={`w-full rounded-lg border px-3.5 py-2.5 text-sm text-gray-800 outline-none transition focus:ring-2 focus:ring-offset-0 ${
-              errors.date
-                ? "border-red-300 focus:border-red-400 focus:ring-red-100"
-                : "border-gray-200 focus:border-blue-400 focus:ring-blue-100"
-            }`}
+            value={form.send_at}
+            onChange={(e) => handleChange("send_at", e.target.value)}
+            className={`w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition focus:ring-2 ${errors.send_at
+              ? "border-red-300 focus:border-red-400 focus:ring-red-100"
+              : "border-gray-200 focus:border-blue-400 focus:ring-blue-100"
+              }`}
           />
-          <ErrorMsg msg={errors.date} />
+          <ErrorMsg msg={errors.send_at} />
         </div>
-      </div>
+      )}
 
       <div className="flex gap-3 border-t border-gray-100 pt-4">
         <button
           type="button"
           onClick={onClose}
-          className="flex-1 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50"
+          className="flex-1 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50"
         >
           Cancel
         </button>
+        {!isEdit && (
+          <button
+            type="button"
+            onClick={() => handleSubmit(true)}
+            disabled={submitting}
+            className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+          >
+            Save Draft
+          </button>
+        )}
         <button
           type="button"
-          onClick={handleSubmit}
+          onClick={() => handleSubmit(false)}
           disabled={submitting}
-          className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition-all ${
-            isEdit
-              ? "bg-amber-500 hover:bg-amber-600 disabled:bg-amber-300"
-              : "bg-red-500 hover:bg-red-600 disabled:bg-red-300"
-          }`}
+          className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition-all ${isEdit
+            ? "bg-amber-500 hover:bg-amber-600 disabled:bg-amber-300"
+            : "bg-red-500 hover:bg-red-600 disabled:bg-red-300"
+            }`}
         >
           {submitting ? (
-            <>
-              <i className="ti ti-loader-2 animate-spin" aria-hidden="true" />
-              {isEdit ? "Saving..." : "Adding..."}
-            </>
-          ) : (
-            <>
-              <i className={`ti ${isEdit ? "ti-device-floppy" : "ti-bell-plus"}`} aria-hidden="true" />
-              {isEdit ? "Save Changes" : "Add Alert"}
-            </>
-          )}
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+          ) : isEdit ? "Save Changes" : "Add Alert"}
         </button>
       </div>
     </div>
