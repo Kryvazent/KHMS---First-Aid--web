@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ROUTES } from "../../constants/routes";
+import { ROUTES } from "@/app/constants/routes";
 import { FaHeart } from "react-icons/fa";
 import {
   MdDashboard,
@@ -12,6 +12,8 @@ import {
   MdSettings,
   MdLogout,
   MdPeople,
+  MdSend,
+  MdPhoneAndroid,
 } from "react-icons/md";
 
 type NavItem = {
@@ -21,11 +23,13 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
-  { label: "Dashboard",   href: ROUTES.DASHBOARD,   icon: <MdDashboard size={20} />   },
-  { label: "Emergencies", href: ROUTES.EMERGENCIES, icon: <MdWarning size={20} />     },
-  { label: "Alerts",      href: ROUTES.ALERTS,      icon: <MdNotifications size={20} />},
-  { label: "Users",       href: ROUTES.USERS,       icon: <MdPeople size={20} />      },
-  { label: "Settings",    href: ROUTES.SETTINGS,    icon: <MdSettings size={20} />    },
+  { label: "Dashboard",     href: ROUTES.DASHBOARD,     icon: <MdDashboard size={20} />      },
+  { label: "Emergencies",   href: ROUTES.EMERGENCIES,   icon: <MdWarning size={20} />        },
+  { label: "Alerts",        href: ROUTES.ALERTS,        icon: <MdNotifications size={20} /> },
+  { label: "Notifications", href: ROUTES.NOTIFICATIONS, icon: <MdSend size={20} />          },
+  { label: "Devices",       href: ROUTES.DEVICES,       icon: <MdPhoneAndroid size={20} />  },
+  { label: "Users",         href: ROUTES.USERS,         icon: <MdPeople size={20} />        },
+  { label: "Settings",      href: ROUTES.SETTINGS,      icon: <MdSettings size={20} />      },
 ];
 
 export default function Sidebar() {
@@ -51,7 +55,7 @@ export default function Sidebar() {
         </div>
       </div>
 
-      <nav className="flex-1 px-3 py-4 flex flex-col gap-1">
+      <nav className="flex-1 px-3 py-4 flex flex-col gap-1 overflow-y-auto">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           return (
@@ -76,11 +80,9 @@ export default function Sidebar() {
       <div className="px-3 py-4 border-t border-gray-100">
         <button
           onClick={handleLogout}
-          className="flex items-center gap-3 px-4 py-3 rounded-xl text-[14px] font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-800 transition-all duration-150 w-full"
+          className="flex items-center gap-3 px-4 py-3 rounded-xl text-[14px] font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-800 w-full"
         >
-          <span className="text-gray-400">
-            <MdLogout size={20} />
-          </span>
+          <span className="text-gray-400"><MdLogout size={20} /></span>
           Logout
         </button>
         <p className="text-xs text-gray-300 px-4 mt-2">Version 1.0.0</p>

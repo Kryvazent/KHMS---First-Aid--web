@@ -79,3 +79,33 @@ export type UserRow = {
   username: string;
   password: string;
 };
+
+export type DeviceToken = {
+  id: number;
+  created_at: string;
+  player_id: string;
+  platform: string;
+  language: string;
+  district_id: number | null;
+  last_active: string | null;
+  is_active: boolean;
+  district?: { id: number; name: string };
+};
+
+export type NotificationLog = {
+  id: number;
+  created_at: string;
+  alert_id: number;
+  success_count: number;
+  failure_count: number;
+  total_tokens: number;
+  onesignal_id: string | null;
+  error_message: string | null;
+  alert?: {
+    id: number;
+    title: string;
+    alert: string;
+    send: boolean;
+    alert_type?: { type: string; color: string; icon: string };
+  };
+};

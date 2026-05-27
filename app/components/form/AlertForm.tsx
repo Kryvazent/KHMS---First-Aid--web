@@ -82,6 +82,20 @@ export default function AlertForm({
     loadMeta();
   }, []);
 
+  async function triggerNotification(alertId: number) {
+    try {
+      const res = await fetch("/api/send-notification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ alert_id: alertId }),
+      });
+      return await res.json();
+    } catch (err) {
+      console.error("Notification failed:", err);
+      return { success: false };
+    }
+  }
+
   function setMultiLang(field: "title" | "alert", value: string) {
     setForm((prev) => ({
       ...prev,
@@ -152,6 +166,12 @@ export default function AlertForm({
       });
     }
 
+    if (alertId && form.send && !asDraft && !form.schedule) {
+      const notif = await triggerNotification(alertId);
+      if (notif.success) {
+        console.log(`Notification sent to ${notif.recipients} devices`);
+      }
+    }
     setSubmitting(false);
     onSuccess?.();
     onClose();
@@ -180,14 +200,13 @@ export default function AlertForm({
           onChange={(e) => setMultiLang("title", e.target.value)}
           placeholder={
             lang === "si" ? "මාතෘකාව ඇතුළත් කරන්න..." :
-            lang === "ta" ? "தலைப்பை உள்ளிடுக..." :
-            "e.g. Heat Wave Warning"
+              lang === "ta" ? "தலைப்பை உள்ளிடுக..." :
+                "e.g. Heat Wave Warning"
           }
-          className={`w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition focus:ring-2 ${
-            errors[`title_${lang}`]
-              ? "border-red-300 focus:border-red-400 focus:ring-red-100"
-              : "border-gray-200 focus:border-blue-400 focus:ring-blue-100"
-          }`}
+          className={`w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition focus:ring-2 ${errors[`title_${lang}`]
+            ? "border-red-300 focus:border-red-400 focus:ring-red-100"
+            : "border-gray-200 focus:border-blue-400 focus:ring-blue-100"
+            }`}
         />
         <ErrorMsg msg={errors[`title_${lang}`]} />
         {lang !== "en" && (
@@ -202,15 +221,14 @@ export default function AlertForm({
           onChange={(e) => setMultiLang("alert", e.target.value)}
           placeholder={
             lang === "si" ? "විස්තරය ඇතුළත් කරන්න..." :
-            lang === "ta" ? "விவரங்களை உள்ளிடுக..." :
-            "Describe the alert..."
+              lang === "ta" ? "விவரங்களை உள்ளிடுக..." :
+                "Describe the alert..."
           }
           rows={3}
-          className={`w-full resize-none rounded-lg border px-3.5 py-2.5 text-sm outline-none transition focus:ring-2 ${
-            errors[`alert_${lang}`]
-              ? "border-red-300 focus:border-red-400 focus:ring-red-100"
-              : "border-gray-200 focus:border-blue-400 focus:ring-blue-100"
-          }`}
+          className={`w-full resize-none rounded-lg border px-3.5 py-2.5 text-sm outline-none transition focus:ring-2 ${errors[`alert_${lang}`]
+            ? "border-red-300 focus:border-red-400 focus:ring-red-100"
+            : "border-gray-200 focus:border-blue-400 focus:ring-blue-100"
+            }`}
         />
         <ErrorMsg msg={errors[`alert_${lang}`]} />
       </div>
@@ -226,11 +244,10 @@ export default function AlertForm({
               style={{
                 backgroundColor: form.alert_type_id === t.id ? t.color : undefined,
               }}
-              className={`flex flex-col items-center gap-1.5 rounded-lg border-2 px-2 py-2.5 text-xs font-medium transition-all ${
-                form.alert_type_id === t.id
-                  ? "border-current text-gray-800"
-                  : "border-gray-200 bg-white text-gray-500 hover:border-gray-300"
-              }`}
+              className={`flex flex-col items-center gap-1.5 rounded-lg border-2 px-2 py-2.5 text-xs font-medium transition-all ${form.alert_type_id === t.id
+                ? "border-current text-gray-800"
+                : "border-gray-200 bg-white text-gray-500 hover:border-gray-300"
+                }`}
             >
               <Icon name={t.icon} size={18} />
               {t.type}
@@ -245,11 +262,10 @@ export default function AlertForm({
         <select
           value={form.audience_id}
           onChange={(e) => handleChange("audience_id", e.target.value)}
-          className={`w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition focus:ring-2 ${
-            errors.audience_id
-              ? "border-red-300 focus:border-red-400 focus:ring-red-100"
-              : "border-gray-200 focus:border-blue-400 focus:ring-blue-100"
-          }`}
+          className={`w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition focus:ring-2 ${errors.audience_id
+            ? "border-red-300 focus:border-red-400 focus:ring-red-100"
+            : "border-gray-200 focus:border-blue-400 focus:ring-blue-100"
+            }`}
         >
           <option value="">Select audience...</option>
           {audiences.map((a) => (
@@ -292,14 +308,12 @@ export default function AlertForm({
         <button
           type="button"
           onClick={() => handleChange("send", !form.send)}
-          className={`relative h-6 w-11 rounded-full transition-colors ${
-            form.send ? "bg-red-500" : "bg-gray-200"
-          }`}
+          className={`relative h-6 w-11 rounded-full transition-colors ${form.send ? "bg-red-500" : "bg-gray-200"
+            }`}
         >
           <span
-            className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
-              form.send ? "translate-x-5" : "translate-x-0"
-            }`}
+            className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${form.send ? "translate-x-5" : "translate-x-0"
+              }`}
           />
         </button>
       </div>
@@ -312,14 +326,12 @@ export default function AlertForm({
         <button
           type="button"
           onClick={() => handleChange("schedule", !form.schedule)}
-          className={`relative h-6 w-11 rounded-full transition-colors ${
-            form.schedule ? "bg-blue-500" : "bg-gray-200"
-          }`}
+          className={`relative h-6 w-11 rounded-full transition-colors ${form.schedule ? "bg-blue-500" : "bg-gray-200"
+            }`}
         >
           <span
-            className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
-              form.schedule ? "translate-x-5" : "translate-x-0"
-            }`}
+            className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${form.schedule ? "translate-x-5" : "translate-x-0"
+              }`}
           />
         </button>
       </div>
@@ -331,11 +343,10 @@ export default function AlertForm({
             type="datetime-local"
             value={form.send_at}
             onChange={(e) => handleChange("send_at", e.target.value)}
-            className={`w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition focus:ring-2 ${
-              errors.send_at
-                ? "border-red-300 focus:border-red-400 focus:ring-red-100"
-                : "border-gray-200 focus:border-blue-400 focus:ring-blue-100"
-            }`}
+            className={`w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition focus:ring-2 ${errors.send_at
+              ? "border-red-300 focus:border-red-400 focus:ring-red-100"
+              : "border-gray-200 focus:border-blue-400 focus:ring-blue-100"
+              }`}
           />
           <ErrorMsg msg={errors.send_at} />
         </div>
@@ -363,11 +374,10 @@ export default function AlertForm({
           type="button"
           onClick={() => handleSubmit(false)}
           disabled={submitting}
-          className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition-all ${
-            isEdit
-              ? "bg-amber-500 hover:bg-amber-600 disabled:bg-amber-300"
-              : "bg-red-500 hover:bg-red-600 disabled:bg-red-300"
-          }`}
+          className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition-all ${isEdit
+            ? "bg-amber-500 hover:bg-amber-600 disabled:bg-amber-300"
+            : "bg-red-500 hover:bg-red-600 disabled:bg-red-300"
+            }`}
         >
           {submitting ? (
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />

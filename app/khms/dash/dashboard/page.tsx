@@ -9,6 +9,8 @@ import { FaUsers, FaPhone } from "react-icons/fa";
 import { supabase } from "@/app/lib/supabase";
 import { ROUTES } from "@/app/constants/routes";
 import { Icon } from "@/app/lib/iconMap";
+import Modal from "@/app/components/ui/Modal";
+import QuickNotificationForm from "@/app/components/form/QuickNotificationForm";
 
 type RecentAlert = {
   id: number;
@@ -105,6 +107,7 @@ export default function DashboardPage() {
   const [emergenciesLoading, setEmergenciesLoading] = useState(true);
   const [scheduleLoading, setScheduleLoading] = useState(true);
 
+  const [quickSendOpen, setQuickSendOpen] = useState(false);
   useEffect(() => {
     async function loadStats() {
       setStatsLoading(true);
@@ -296,11 +299,10 @@ export default function DashboardPage() {
                     </p>
                   </div>
                   <span
-                    className={`text-xs font-semibold px-2.5 py-0.5 rounded-full shrink-0 ${
-                      alert.send
+                    className={`text-xs font-semibold px-2.5 py-0.5 rounded-full shrink-0 ${alert.send
                         ? "bg-green-50 text-green-600"
                         : "bg-gray-100 text-gray-500"
-                    }`}
+                      }`}
                   >
                     {alert.send ? "Sent" : "Draft"}
                   </span>
@@ -407,7 +409,16 @@ export default function DashboardPage() {
         </div>
       )}
 
-     
+      <Modal
+        isOpen={quickSendOpen}
+        onClose={() => setQuickSendOpen(false)}
+        title="Send Push Notification"
+      >
+        <QuickNotificationForm
+          onClose={() => setQuickSendOpen(false)}
+        />
+      </Modal>
+
     </div>
   );
 }
