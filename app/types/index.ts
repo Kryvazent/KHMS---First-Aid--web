@@ -71,3 +71,11 @@ export type EmergencyRow = {
   severity_level?: SeverityLevel;
   steps?: StepRow[];
 };
+
+export type UserRow = {
+  id: number;
+  created_at: string;
+  name: string;
+  username: string;
+  password: string;
+};

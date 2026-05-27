@@ -3,5 +3,6 @@ export const ROUTES = {
   DASHBOARD: "/khms/dash/dashboard",
   EMERGENCIES: "/khms/dash/emergencies",
   ALERTS: "/khms/dash/alerts",
+  USERS: "/khms/dash/users",
   SETTINGS: "/khms/dash/settings",
 };

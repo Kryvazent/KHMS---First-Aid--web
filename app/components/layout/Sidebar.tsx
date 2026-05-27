@@ -11,6 +11,7 @@ import {
   MdNotifications,
   MdSettings,
   MdLogout,
+  MdPeople,
 } from "react-icons/md";
 
 type NavItem = {
@@ -23,6 +24,7 @@ const navItems: NavItem[] = [
   { label: "Dashboard",   href: ROUTES.DASHBOARD,   icon: <MdDashboard size={20} />   },
   { label: "Emergencies", href: ROUTES.EMERGENCIES, icon: <MdWarning size={20} />     },
   { label: "Alerts",      href: ROUTES.ALERTS,      icon: <MdNotifications size={20} />},
+  { label: "Users",       href: ROUTES.USERS,       icon: <MdPeople size={20} />      },
   { label: "Settings",    href: ROUTES.SETTINGS,    icon: <MdSettings size={20} />    },
 ];
 
