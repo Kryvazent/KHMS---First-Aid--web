@@ -98,9 +98,11 @@ export default function NotificationsPage() {
     }
   }
 
-  const filtered = logs.filter((l) =>
-    !search || l.alert?.title?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = logs.filter((l) => {
+    if (!search) return true;
+    const title = l.alert?.title ?? l.title ?? "Quick Notification";
+    return title.toLowerCase().includes(search.toLowerCase());
+  });
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -201,6 +203,9 @@ export default function NotificationsPage() {
               : 0;
             const isSuccess = log.failure_count === 0 && log.total_tokens > 0;
             const typeColor = log.alert?.alert_type?.color ?? "#F3F4F6";
+            const isQuick = !log.alert_id;
+            const title = log.alert?.title ?? log.title ?? (isQuick ? "Quick Notification" : "Deleted alert");
+            const message = log.alert?.alert ?? log.message ?? (isQuick ? "Sent from web quick notification" : "—");
 
             return (
               <div
@@ -224,10 +229,10 @@ export default function NotificationsPage() {
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-gray-900 truncate">
-                        {log.alert?.title ?? "Deleted alert"}
+                        {title}
                       </p>
                       <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">
-                        {log.alert?.alert ?? "—"}
+                        {message}
                       </p>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">

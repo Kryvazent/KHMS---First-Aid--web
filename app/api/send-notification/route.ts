@@ -37,10 +37,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Alert not found" }, { status: 404 });
     }
 
-    // 2. Get target player IDs (optional district filter)
+    // 2. Parse multilingual content
+    const titles = parseMultiLang(alert.title);
+    const bodies = parseMultiLang(alert.alert);
+
+    // 3. Get target player IDs (optional district filter)
     let tokenQuery = supabase
       .from("device_token")
-      .select("player_id, language")
+      .select("token, language")
       .eq("is_active", true);
 
     if (alert.district_id) {
@@ -53,6 +57,8 @@ export async function POST(req: NextRequest) {
     if (!tokens || tokens.length === 0) {
       await supabase.from("notification_log").insert({
         alert_id,
+        title: titles.en || "",
+        message: bodies.en || "",
         success_count: 0,
         failure_count: 0,
         total_tokens: 0,
@@ -61,13 +67,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, total: 0, message: "No devices to notify" });
     }
 
-    // 3. Parse multilingual content
-    const titles = parseMultiLang(alert.title);
-    const bodies = parseMultiLang(alert.alert);
-
     // 4. Send to OneSignal
     // OneSignal supports multilingual content natively!
-    const playerIds = tokens.map((t) => t.player_id);
+    const playerIds = tokens.map((t) => t.token).filter(Boolean);
 
     const oneSignalRes = await fetch("https://onesignal.com/api/v1/notifications", {
       method: "POST",
@@ -96,7 +98,6 @@ export async function POST(req: NextRequest) {
           url: alert.url ?? "",
         },
         // Android specifics
-        android_channel_id: "emergency_alerts",
         priority: 10,
         // iOS specifics
         ios_sound: "default",
@@ -110,6 +111,8 @@ export async function POST(req: NextRequest) {
     if (!oneSignalRes.ok) {
       await supabase.from("notification_log").insert({
         alert_id,
+        title: titles.en || "",
+        message: bodies.en || "",
         success_count: 0,
         failure_count: tokens.length,
         total_tokens: tokens.length,
@@ -121,13 +124,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const delivered = typeof result.recipients === "number" ? result.recipients : playerIds.length;
+
     // 5. Log result
     await supabase.from("notification_log").insert({
       alert_id,
-      success_count: result.recipients ?? 0,
-      failure_count: tokens.length - (result.recipients ?? 0),
+      title: titles.en || "",
+      message: bodies.en || "",
+      success_count: delivered,
+      failure_count: tokens.length - delivered,
       total_tokens: tokens.length,
-      onesignal_id: result.id,
     });
 
     // 6. Mark alert as sent
@@ -136,7 +142,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       total: tokens.length,
-      recipients: result.recipients ?? 0,
+      recipients: delivered,
       onesignal_id: result.id,
     });
   } catch (err) {

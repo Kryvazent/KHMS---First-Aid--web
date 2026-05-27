@@ -38,7 +38,7 @@ export default function DevicesPage() {
     if (!search) return true;
     const q = search.toLowerCase();
     return (
-      d.player_id.toLowerCase().includes(q) ||
+      d.token.toLowerCase().includes(q) ||
       (d.district?.name ?? "").toLowerCase().includes(q) ||
       d.language.toLowerCase().includes(q)
     );
@@ -155,7 +155,7 @@ export default function DevicesPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
                   <p className="text-sm font-mono text-gray-700 truncate">
-                    {device.player_id.substring(0, 20)}…
+                    {device.token.substring(0, 20)}…
                   </p>
                   <span
                     className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${

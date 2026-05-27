@@ -5,7 +5,7 @@ import { MdSend, MdInfoOutline } from "react-icons/md";
 import { supabase } from "@/app/lib/supabase";
 import { District } from "@/app/types";
 
-type TargetType = "all" | "district" | "test";
+type TargetType = "all" | "district";
 
 type Props = {
   onClose: () => void;
@@ -174,7 +174,7 @@ export default function QuickNotificationForm({ onClose, onSuccess }: Props) {
       {/* Target */}
       <div>
         <label className="mb-2 block text-sm font-semibold text-gray-700">Target Audience</label>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
             onClick={() => setTarget("all")}
@@ -198,18 +198,6 @@ export default function QuickNotificationForm({ onClose, onSuccess }: Props) {
           >
             <span className="text-xl">📍</span>
             <span className="text-xs font-semibold">District</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setTarget("test")}
-            className={`flex flex-col items-center gap-1 px-3 py-3 rounded-xl border-2 transition-all ${
-              target === "test"
-                ? "border-blue-400 bg-blue-50 text-blue-600"
-                : "border-gray-200 bg-white text-gray-500 hover:border-gray-300"
-            }`}
-          >
-            <span className="text-xl">🧪</span>
-            <span className="text-xs font-semibold">Test (1)</span>
           </button>
         </div>
       </div>

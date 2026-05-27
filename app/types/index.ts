@@ -83,7 +83,7 @@ export type UserRow = {
 export type DeviceToken = {
   id: number;
   created_at: string;
-  player_id: string;
+  token: string;
   platform: string;
   language: string;
   district_id: number | null;
@@ -95,7 +95,9 @@ export type DeviceToken = {
 export type NotificationLog = {
   id: number;
   created_at: string;
-  alert_id: number;
+  alert_id: number | null;
+  title?: string | null;
+  message?: string | null;
   success_count: number;
   failure_count: number;
   total_tokens: number;
