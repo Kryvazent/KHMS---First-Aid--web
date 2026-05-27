@@ -6,6 +6,8 @@ export type MultiLangText = {
   ta: string;
 };
 
+export type UserRole = "admin" | "staff";
+
 export type AlertType = {
   id: number;
   type: string;
@@ -78,6 +80,7 @@ export type UserRow = {
   name: string;
   username: string;
   password: string;
+  role: "admin" | "staff";  
 };
 
 export type DeviceToken = {

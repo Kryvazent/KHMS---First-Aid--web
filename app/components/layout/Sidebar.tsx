@@ -1,40 +1,46 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ROUTES } from "@/app/constants/routes";
 import { FaHeart } from "react-icons/fa";
 import {
-  MdDashboard,
-  MdWarning,
-  MdNotifications,
-  MdSettings,
-  MdLogout,
-  MdPeople,
-  MdSend,
-  MdPhoneAndroid,
+  MdDashboard, MdWarning, MdNotifications, MdSettings,
+  MdLogout, MdPeople, MdSend, MdPhoneAndroid,
 } from "react-icons/md";
+import { useCurrentUser } from "@/app/hooks/useCurrentUser";
 
 type NavItem = {
   label: string;
   href: string;
   icon: React.ReactNode;
+  adminOnly?: boolean;
 };
 
 const navItems: NavItem[] = [
-  { label: "Dashboard",     href: ROUTES.DASHBOARD,     icon: <MdDashboard size={20} />      },
-  { label: "Emergencies",   href: ROUTES.EMERGENCIES,   icon: <MdWarning size={20} />        },
+  { label: "Dashboard",     href: ROUTES.DASHBOARD,     icon: <MdDashboard size={20} /> },
+  { label: "Emergencies",   href: ROUTES.EMERGENCIES,   icon: <MdWarning size={20} /> },
   { label: "Alerts",        href: ROUTES.ALERTS,        icon: <MdNotifications size={20} /> },
-  { label: "Notifications", href: ROUTES.NOTIFICATIONS, icon: <MdSend size={20} />          },
-  { label: "Devices",       href: ROUTES.DEVICES,       icon: <MdPhoneAndroid size={20} />  },
-  { label: "Users",         href: ROUTES.USERS,         icon: <MdPeople size={20} />        },
-  { label: "Settings",      href: ROUTES.SETTINGS,      icon: <MdSettings size={20} />      },
+  { label: "Notifications", href: ROUTES.NOTIFICATIONS, icon: <MdSend size={20} /> },
+  { label: "Devices",       href: ROUTES.DEVICES,       icon: <MdPhoneAndroid size={20} /> },
+  { label: "Users",         href: ROUTES.USERS,         icon: <MdPeople size={20} />, adminOnly: true },
+  { label: "Settings",      href: ROUTES.SETTINGS,      icon: <MdSettings size={20} /> },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const currentUser = useCurrentUser();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const resolvedUser = mounted ? currentUser : null;
+  const isAdmin = resolvedUser?.role === "admin";
+  const visibleItems = navItems.filter((item) => !item.adminOnly || isAdmin);
 
   const handleLogout = () => {
     localStorage.removeItem("admin_user");
@@ -56,7 +62,7 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex-1 px-3 py-4 flex flex-col gap-1 overflow-y-auto">
-        {navItems.map((item) => {
+        {visibleItems.map((item) => {
           const isActive = pathname === item.href;
           return (
             <Link
@@ -78,6 +84,12 @@ export default function Sidebar() {
       </nav>
 
       <div className="px-3 py-4 border-t border-gray-100">
+        {resolvedUser && (
+          <div className="px-4 py-2 mb-2">
+            <p className="text-xs font-semibold text-gray-700 truncate">{resolvedUser.name}</p>
+            <p className="text-[10px] text-gray-400 capitalize">{resolvedUser.role}</p>
+          </div>
+        )}
         <button
           onClick={handleLogout}
           className="flex items-center gap-3 px-4 py-3 rounded-xl text-[14px] font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-800 w-full"

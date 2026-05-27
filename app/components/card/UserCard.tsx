@@ -92,7 +92,10 @@ export default function UserCard({
         <div className="flex items-center justify-between text-xs text-gray-400 pt-3 border-t border-gray-50">
           <span className="flex items-center gap-1.5">
             <FaUserShield size={11} />
-            Admin
+            <span className="flex items-center gap-1.5">
+              <FaUserShield size={11} />
+              <span className="capitalize">{user.role}</span>  {/* was: Admin */}
+            </span>
           </span>
           <span>
             Joined {new Date(user.created_at).toLocaleDateString(undefined, {

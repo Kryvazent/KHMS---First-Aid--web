@@ -10,6 +10,7 @@ type UserFormData = {
   username: string;
   password: string;
   confirmPassword: string;
+  role: "admin" | "staff";
 };
 
 function FieldLabel({ label, required }: { label: string; required?: boolean }) {
@@ -40,6 +41,7 @@ export default function UserForm({ user, onClose, onSuccess }: Props) {
     username: user?.username ?? "",
     password: "",
     confirmPassword: "",
+    role: user?.role ?? "staff",
   });
 
   const [showPassword, setShowPassword] = useState(false);
@@ -114,6 +116,7 @@ export default function UserForm({ user, onClose, onSuccess }: Props) {
         const payload: Partial<UserRow> = {
           name: form.name.trim(),
           username: form.username.trim(),
+          role: form.role,
         };
         // Only update password if filled
         if (form.password) {
@@ -141,6 +144,7 @@ export default function UserForm({ user, onClose, onSuccess }: Props) {
           name: form.name.trim(),
           username: form.username.trim(),
           password: form.password,
+          role: form.role,
         });
 
         if (error) throw error;
@@ -262,6 +266,26 @@ export default function UserForm({ user, onClose, onSuccess }: Props) {
         </div>
       )}
 
+      {/* Role */}
+      <div>
+        <FieldLabel label="Role" required />
+        <div className="grid grid-cols-2 gap-2">
+          {(["staff", "admin"] as const).map((r) => (
+            <button
+              key={r}
+              type="button"
+              onClick={() => handleChange("role", r)}
+              className={`py-2.5 rounded-xl border-2 text-sm font-semibold capitalize transition-all ${form.role === r
+                  ? "border-red-400 bg-red-50 text-red-600"
+                  : "border-gray-200 text-gray-500 hover:border-gray-300"
+                }`}
+            >
+              {r}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Actions */}
       <div className="flex gap-3 border-t border-gray-100 pt-4">
         <button
@@ -276,11 +300,10 @@ export default function UserForm({ user, onClose, onSuccess }: Props) {
           type="button"
           onClick={handleSubmit}
           disabled={submitting}
-          className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition-all ${
-            isEdit
+          className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition-all ${isEdit
               ? "bg-amber-500 hover:bg-amber-600 disabled:bg-amber-300"
               : "bg-red-500 hover:bg-red-600 disabled:bg-red-300"
-          }`}
+            }`}
         >
           {submitting && (
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />

@@ -21,7 +21,7 @@ export default function LoginForm() {
 
     const { data, error: dbError } = await supabase
       .from("user")
-      .select("id, name, username")
+      .select("id, name, username, role")
       .eq("username", username)
       .eq("password", password)
       .single();

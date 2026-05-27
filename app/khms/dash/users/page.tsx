@@ -8,12 +8,26 @@ import { UserRow } from "@/app/types";
 import { useState, useEffect, useCallback } from "react";
 import { MdSearch, MdPeople } from "react-icons/md";
 
+import { useRouter } from "next/navigation";
+import { useCurrentUser } from "@/app/hooks/useCurrentUser";
+import { ROUTES } from "@/app/constants/routes";
+
 export default function UsersPage() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [modal, setModal] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<number | undefined>();
+
+  const router = useRouter();
+  const currentUser = useCurrentUser();
+
+  // Redirect staff away immediately
+  useEffect(() => {
+    if (currentUser && currentUser.role !== "admin") {
+      router.replace(ROUTES.DASHBOARD);
+    }
+  }, [currentUser, router]);
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
@@ -45,6 +59,14 @@ export default function UsersPage() {
     }
   }, []);
 
+  if (!currentUser || currentUser.role !== "admin") {
+    return (
+      <div className="flex justify-center py-16">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-red-500 border-t-transparent" />
+      </div>
+    );
+  }
+
   const filtered = users.filter((u) => {
     if (!search) return true;
     const q = search.toLowerCase();
@@ -53,6 +75,8 @@ export default function UsersPage() {
       u.username.toLowerCase().includes(q)
     );
   });
+
+  
 
   return (
     <div className="max-w-6xl mx-auto">
