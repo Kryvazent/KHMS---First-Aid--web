@@ -11,7 +11,6 @@ type ModalProps = {
 };
 
 export default function Modal({ isOpen, onClose, title, children }: ModalProps) {
-  // Close on Escape key
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -20,7 +19,6 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
     return () => document.removeEventListener("keydown", handleKey);
   }, [isOpen, onClose]);
 
-  // Prevent body scroll when open
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
@@ -30,15 +28,8 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-        onClick={onClose}
-      />
-
-      {/* Modal Box */}
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col z-10 animate-in fade-in zoom-in-95 duration-200">
-        {/* Header */}
         <div className="flex items-center justify-between px-7 py-5 border-b border-gray-100 shrink-0">
           <h2 className="text-xl font-bold text-gray-900">{title}</h2>
           <button
@@ -48,11 +39,7 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
             <MdClose size={20} />
           </button>
         </div>
-
-        {/* Scrollable Content */}
-        <div className="overflow-y-auto flex-1">
-          {children}
-        </div>
+        <div className="overflow-y-auto flex-1">{children}</div>
       </div>
     </div>
   );
