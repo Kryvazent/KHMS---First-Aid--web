@@ -208,7 +208,7 @@ export default function EmergencyForm({ onClose, emergency, onSuccess }: Props) 
               lang === "ta" ? "அவசர பெயர்..." :
               "e.g. Heart Attack"
             }
-            className={`border rounded-xl px-4 py-3 text-sm w-full outline-none focus:ring-2 transition-all ${
+            className={`border rounded-xl px-4 py-3 text-sm w-full outline-none focus:ring-2 transition-all bg-white text-gray-900 placeholder:text-gray-400 ${
               errors.name_en && lang === "en"
                 ? "border-red-300 focus:border-red-400 focus:ring-red-100"
                 : "border-gray-200 focus:border-red-400 focus:ring-red-100"
@@ -229,7 +229,7 @@ export default function EmergencyForm({ onClose, emergency, onSuccess }: Props) 
               lang === "ta" ? "உட்தலைப்பு..." :
               "Short description..."
             }
-            className="border border-gray-200 rounded-xl px-4 py-3 text-sm w-full outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100"
+            className="border border-gray-200 rounded-xl px-4 py-3 text-sm w-full outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100 bg-white text-gray-900 placeholder:text-gray-400"
           />
         </div>
 
@@ -258,7 +258,7 @@ export default function EmergencyForm({ onClose, emergency, onSuccess }: Props) 
               value={icon}
               onChange={(e) => setIcon(e.target.value)}
               placeholder="Or type icon name (e.g. heart, fire)..."
-              className="flex-1 border border-gray-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100"
+              className="flex-1 border border-gray-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100 bg-white text-gray-900 placeholder:text-gray-400"
             />
             <div className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center text-gray-600 shrink-0">
               <Icon name={icon} size={18} />
@@ -325,7 +325,7 @@ export default function EmergencyForm({ onClose, emergency, onSuccess }: Props) 
               lang === "ta" ? "எச்சரிக்கை..." :
               "Call emergency services immediately."
             }
-            className="border border-gray-200 rounded-xl px-4 py-3 text-sm w-full outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100 resize-none"
+            className="border border-gray-200 rounded-xl px-4 py-3 text-sm w-full outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100 resize-none bg-white text-gray-900 placeholder:text-gray-400"
           />
           {lang !== "en" && <p className="mt-1 text-xs text-gray-400">English: {warning.en || "—"}</p>}
         </div>
@@ -376,7 +376,7 @@ export default function EmergencyForm({ onClose, emergency, onSuccess }: Props) 
                   }
                   value={step.title[lang]}
                   onChange={(e) => updateStepMultiLang(step.tempId, "title", e.target.value)}
-                  className={`border rounded-xl px-4 py-2.5 text-sm w-full outline-none focus:ring-2 ${
+                  className={`border rounded-xl px-4 py-2.5 text-sm w-full outline-none focus:ring-2 bg-white text-gray-900 placeholder:text-gray-400 ${
                     errors[`step_${index}_title_en`] && lang === "en"
                       ? "border-red-300 focus:border-red-400 focus:ring-red-100"
                       : "border-gray-200 focus:border-red-400 focus:ring-red-100"
@@ -398,7 +398,7 @@ export default function EmergencyForm({ onClose, emergency, onSuccess }: Props) 
                   }
                   value={step.instruction[lang]}
                   onChange={(e) => updateStepMultiLang(step.tempId, "instruction", e.target.value)}
-                  className={`border rounded-xl px-4 py-2.5 text-sm w-full outline-none focus:ring-2 resize-none ${
+                  className={`border rounded-xl px-4 py-2.5 text-sm w-full outline-none focus:ring-2 resize-none bg-white text-gray-900 placeholder:text-gray-400 ${
                     errors[`step_${index}_instruction_en`] && lang === "en"
                       ? "border-red-300 focus:border-red-400 focus:ring-red-100"
                       : "border-gray-200 focus:border-red-400 focus:ring-red-100"
@@ -421,7 +421,7 @@ export default function EmergencyForm({ onClose, emergency, onSuccess }: Props) 
                       placeholder="warning"
                       value={step.icon}
                       onChange={(e) => updateStep(step.tempId, "icon", e.target.value)}
-                      className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                      className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100 bg-white text-gray-900 placeholder:text-gray-400"
                     />
                     <div className="w-9 h-9 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-600 shrink-0">
                       <Icon name={step.icon} size={16} />
@@ -437,7 +437,7 @@ export default function EmergencyForm({ onClose, emergency, onSuccess }: Props) 
                   placeholder="https://..."
                   value={step.image_url}
                   onChange={(e) => updateStep(step.tempId, "image_url", e.target.value)}
-                  className="border border-gray-200 rounded-xl px-4 py-2 text-sm w-full outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                  className="border border-gray-200 rounded-xl px-4 py-2 text-sm w-full outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100 bg-white text-gray-900 placeholder:text-gray-400"
                 />
               </div>
 
@@ -448,7 +448,7 @@ export default function EmergencyForm({ onClose, emergency, onSuccess }: Props) 
                   placeholder="https://..."
                   value={step.video_url}
                   onChange={(e) => updateStep(step.tempId, "video_url", e.target.value)}
-                  className="border border-gray-200 rounded-xl px-4 py-2 text-sm w-full outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100"
+                  className="border border-gray-200 rounded-xl px-4 py-2 text-sm w-full outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100 bg-white text-gray-900 placeholder:text-gray-400"
                 />
               </div>
             </div>

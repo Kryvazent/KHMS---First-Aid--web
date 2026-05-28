@@ -2,7 +2,6 @@
 
 import React from "react";
 import { MdWarning } from "react-icons/md";
-import { FaPhone } from "react-icons/fa";
 import { Icon } from "../../lib/iconMap";
 import { EmergencyRow } from "../../types";
 
@@ -96,9 +95,6 @@ export default function EmergencyDetailsView({ emergency, onClose }: Props) {
           className="flex-1 py-3 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50"
         >
           Close
-        </button>
-        <button className="flex-1 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold flex items-center justify-center gap-2 shadow-md shadow-red-200">
-          <FaPhone size={13} /> Call Emergency Services
         </button>
       </div>
     </div>
