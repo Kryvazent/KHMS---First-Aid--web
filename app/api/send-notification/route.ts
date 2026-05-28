@@ -1,23 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-// Server-side Supabase client (uses service role if available, else anon)
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
 );
-
-// Helper: Parse multilingual JSON
-function parseMultiLang(value: string | null) {
-  if (!value) return { en: "", si: "", ta: "" };
-  try {
-    const parsed = JSON.parse(value);
-    if (parsed && typeof parsed === "object" && "en" in parsed) {
-      return { en: parsed.en ?? "", si: parsed.si ?? "", ta: parsed.ta ?? "" };
-    }
-  } catch {}
-  return { en: value, si: "", ta: "" };
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -37,9 +24,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Alert not found" }, { status: 404 });
     }
 
-    // 2. Parse multilingual content
-    const titles = parseMultiLang(alert.title);
-    const bodies = parseMultiLang(alert.alert);
+    const titles = {
+      en: alert.title ?? "",
+      si: alert.title_si ?? alert.title ?? "",
+      ta: alert.title_ta ?? alert.title ?? "",
+    };
+    const bodies = {
+      en: alert.alert ?? "",
+      si: alert.alert_si ?? alert.alert ?? "",
+      ta: alert.alert_ta ?? alert.alert ?? "",
+    };
 
     // 3. Get target player IDs (optional district filter)
     let tokenQuery = supabase
@@ -58,7 +52,11 @@ export async function POST(req: NextRequest) {
       await supabase.from("notification_log").insert({
         alert_id,
         title: titles.en || "",
+        title_si: titles.si || null,
+        title_ta: titles.ta || null,
         message: bodies.en || "",
+        message_si: bodies.si || null,
+        message_ta: bodies.ta || null,
         success_count: 0,
         failure_count: 0,
         total_tokens: 0,
@@ -112,7 +110,11 @@ export async function POST(req: NextRequest) {
       await supabase.from("notification_log").insert({
         alert_id,
         title: titles.en || "",
+        title_si: titles.si || null,
+        title_ta: titles.ta || null,
         message: bodies.en || "",
+        message_si: bodies.si || null,
+        message_ta: bodies.ta || null,
         success_count: 0,
         failure_count: tokens.length,
         total_tokens: tokens.length,
@@ -130,7 +132,11 @@ export async function POST(req: NextRequest) {
     await supabase.from("notification_log").insert({
       alert_id,
       title: titles.en || "",
+      title_si: titles.si || null,
+      title_ta: titles.ta || null,
       message: bodies.en || "",
+      message_si: bodies.si || null,
+      message_ta: bodies.ta || null,
       success_count: delivered,
       failure_count: tokens.length - delivered,
       total_tokens: tokens.length,

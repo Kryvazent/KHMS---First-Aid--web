@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { FaTag, FaGlobe, FaClock, FaUsers, FaHashtag, FaLink } from "react-icons/fa";
 import { MdSend, MdOutlineDrafts } from "react-icons/md";
 import { Icon } from "../../lib/iconMap";
-import { AlertRow } from "../../types";
+import { AlertRow, Language } from "../../types";
+import LanguageTabs from "../ui/LanguageTabs";
 
 function MetaRow({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
   return (
@@ -19,10 +20,28 @@ function MetaRow({ icon, label, children }: { icon: React.ReactNode; label: stri
 }
 
 export default function AlertView({ alert }: { alert: AlertRow }) {
+  const [lang, setLang] = useState<Language>("en");
   const typeColor = alert.alert_type?.color ?? "#FEF2F2";
+  const title = lang === "si" ? alert.title_si ?? alert.title : lang === "ta" ? alert.title_ta ?? alert.title : alert.title;
+  const message = lang === "si" ? alert.alert_si ?? alert.alert : lang === "ta" ? alert.alert_ta ?? alert.alert : alert.alert;
+  const typeLabel = lang === "si"
+    ? alert.alert_type?.type_si ?? alert.alert_type?.type ?? "—"
+    : lang === "ta"
+      ? alert.alert_type?.type_ta ?? alert.alert_type?.type ?? "—"
+      : alert.alert_type?.type ?? "—";
+  const districtLabel = lang === "si"
+    ? alert.district?.name_si ?? alert.district?.name ?? "All Districts"
+    : lang === "ta"
+      ? alert.district?.name_ta ?? alert.district?.name ?? "All Districts"
+      : alert.district?.name ?? "All Districts";
 
   return (
     <div className="flex flex-col gap-5 p-6">
+      <div>
+        <p className="mb-1.5 text-sm font-medium text-gray-700">Content Language</p>
+        <LanguageTabs active={lang} onChange={setLang} />
+      </div>
+
       <div
         className="relative overflow-hidden rounded-xl border border-gray-100 p-5"
         style={{ backgroundColor: typeColor }}
@@ -32,8 +51,8 @@ export default function AlertView({ alert }: { alert: AlertRow }) {
             <Icon name={alert.alert_type?.icon ?? "notifications"} size={24} />
           </span>
           <div className="min-w-0 flex-1">
-            <h3 className="mb-1 text-base font-semibold text-gray-900">{alert.title}</h3>
-            <p className="text-sm leading-relaxed text-gray-600">{alert.alert}</p>
+            <h3 className="mb-1 text-base font-semibold text-gray-900">{title}</h3>
+            <p className="text-sm leading-relaxed text-gray-600">{message}</p>
           </div>
         </div>
       </div>
@@ -44,7 +63,7 @@ export default function AlertView({ alert }: { alert: AlertRow }) {
             className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium text-gray-700"
             style={{ backgroundColor: typeColor }}
           >
-            {alert.alert_type?.type ?? "—"}
+            {typeLabel}
           </span>
         </MetaRow>
 
@@ -56,7 +75,7 @@ export default function AlertView({ alert }: { alert: AlertRow }) {
 
         <MetaRow icon={<FaGlobe size={14} />} label="District">
           <span className="text-sm font-medium text-gray-700">
-            {alert.district?.name ?? "All Districts"}
+            {districtLabel}
           </span>
         </MetaRow>
 
@@ -77,7 +96,7 @@ export default function AlertView({ alert }: { alert: AlertRow }) {
               href={alert.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-blue-500 hover:underline max-w-[200px] truncate block"
+              className="text-sm text-blue-500 hover:underline max-w-50 truncate block"
             >
               {alert.url}
             </a>
