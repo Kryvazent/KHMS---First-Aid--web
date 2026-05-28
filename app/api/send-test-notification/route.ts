@@ -8,7 +8,7 @@ const supabase = createClient(
 
 export async function POST(req: NextRequest) {
   try {
-    const { title, message, district_id, target } = await req.json();
+    const { title, title_si, title_ta, message, message_si, message_ta, district_id, target } = await req.json();
 
     if (!title || !message) {
       return NextResponse.json(
@@ -33,7 +33,11 @@ export async function POST(req: NextRequest) {
       await supabase.from("notification_log").insert({
         alert_id: null,
         title,
+        title_si: title_si ?? null,
+        title_ta: title_ta ?? null,
         message,
+        message_si: message_si ?? null,
+        message_ta: message_ta ?? null,
         success_count: 0,
         failure_count: 0,
         total_tokens: 0,
@@ -57,8 +61,16 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         app_id: process.env.ONESIGNAL_APP_ID,
         include_player_ids: playerIds,
-        headings: { en: title },
-        contents: { en: message },
+        headings: {
+          en: title,
+          si: title_si || title,
+          ta: title_ta || title,
+        },
+        contents: {
+          en: message,
+          si: message_si || message,
+          ta: message_ta || message,
+        },
         data: { type: "test", source: "admin_test" },
         priority: 10,
       }),
@@ -70,7 +82,11 @@ export async function POST(req: NextRequest) {
       await supabase.from("notification_log").insert({
         alert_id: null,
         title,
+        title_si: title_si ?? null,
+        title_ta: title_ta ?? null,
         message,
+        message_si: message_si ?? null,
+        message_ta: message_ta ?? null,
         success_count: 0,
         failure_count: tokens.length,
         total_tokens: tokens.length,
@@ -87,7 +103,11 @@ export async function POST(req: NextRequest) {
     await supabase.from("notification_log").insert({
       alert_id: null,
       title,
+      title_si: title_si ?? null,
+      title_ta: title_ta ?? null,
       message,
+      message_si: message_si ?? null,
+      message_ta: message_ta ?? null,
       success_count: delivered,
       failure_count: tokens.length - delivered,
       total_tokens: tokens.length,

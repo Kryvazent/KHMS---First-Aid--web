@@ -52,8 +52,12 @@ export default function AlertForm({
   const [loadingMeta, setLoadingMeta] = useState(true);
 
   const [form, setForm] = useState<AlertFormData>({
-    title: alert ? { en: alert.title, si: "", ta: "" } : { ...EMPTY_MULTILANG },
-    alert: alert ? { en: alert.alert, si: "", ta: "" } : { ...EMPTY_MULTILANG },
+    title: alert
+      ? { en: alert.title, si: alert.title_si ?? "", ta: alert.title_ta ?? "" }
+      : { ...EMPTY_MULTILANG },
+    alert: alert
+      ? { en: alert.alert, si: alert.alert_si ?? "", ta: alert.alert_ta ?? "" }
+      : { ...EMPTY_MULTILANG },
     alert_type_id: alert?.alert_type_id ?? "",
     audience_id: alert?.audience_id ?? "",
     district_id: alert?.district_id ?? "",
@@ -111,6 +115,12 @@ export default function AlertForm({
     if (errors[field as string]) setErrors((prev) => ({ ...prev, [field]: undefined }));
   }
 
+  function localizedLabel(value: string, si?: string | null, ta?: string | null) {
+    if (lang === "si") return si || value;
+    if (lang === "ta") return ta || value;
+    return value;
+  }
+
   function validate() {
     const e: Record<string, string> = {};
     if (!form.title.en.trim()) e["title_en"] = "English title is required.";
@@ -134,7 +144,11 @@ export default function AlertForm({
 
     const payload = {
       title: form.title.en,
+      title_si: form.title.si || null,
+      title_ta: form.title.ta || null,
       alert: form.alert.en,
+      alert_si: form.alert.si || null,
+      alert_ta: form.alert.ta || null,
       alert_type_id: Number(form.alert_type_id),
       audience_id: Number(form.audience_id),
       district_id: form.district_id ? Number(form.district_id) : null,
@@ -250,7 +264,7 @@ export default function AlertForm({
                 }`}
             >
               <Icon name={t.icon} size={18} />
-              {t.type}
+              {localizedLabel(t.type, t.type_si, t.type_ta)}
             </button>
           ))}
         </div>
@@ -284,7 +298,9 @@ export default function AlertForm({
         >
           <option value="">All Districts</option>
           {districts.map((d) => (
-            <option key={d.id} value={d.id}>{d.name} ({d.province})</option>
+            <option key={d.id} value={d.id}>
+              {localizedLabel(d.name, d.name_si, d.name_ta)} ({d.province})
+            </option>
           ))}
         </select>
       </div>

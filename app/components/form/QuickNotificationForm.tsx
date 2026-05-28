@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { MdSend, MdInfoOutline } from "react-icons/md";
 import { supabase } from "@/app/lib/supabase";
-import { District } from "@/app/types";
+import { District, Language, MultiLangText } from "@/app/types";
+import LanguageTabs from "../ui/LanguageTabs";
 
 type TargetType = "all" | "district";
 
@@ -12,9 +13,12 @@ type Props = {
   onSuccess?: () => void;
 };
 
+const EMPTY_MULTILANG: MultiLangText = { en: "", si: "", ta: "" };
+
 export default function QuickNotificationForm({ onClose, onSuccess }: Props) {
-  const [title, setTitle] = useState("");
-  const [message, setMessage] = useState("");
+  const [lang, setLang] = useState<Language>("en");
+  const [title, setTitle] = useState<MultiLangText>({ ...EMPTY_MULTILANG });
+  const [message, setMessage] = useState<MultiLangText>({ ...EMPTY_MULTILANG });
   const [target, setTarget] = useState<TargetType>("all");
   const [districtId, setDistrictId] = useState<number | "">("");
   const [districts, setDistricts] = useState<District[]>([]);
@@ -41,10 +45,10 @@ export default function QuickNotificationForm({ onClose, onSuccess }: Props) {
 
   function validate() {
     const e: Record<string, string> = {};
-    if (!title.trim()) e.title = "Title is required.";
-    else if (title.trim().length > 60) e.title = "Title must be 60 characters or less.";
-    if (!message.trim()) e.message = "Message is required.";
-    else if (message.trim().length > 200) e.message = "Message must be 200 characters or less.";
+    if (!title.en.trim()) e.title = "English title is required.";
+    else if (title.en.trim().length > 60) e.title = "Title must be 60 characters or less.";
+    if (!message.en.trim()) e.message = "English message is required.";
+    else if (message.en.trim().length > 200) e.message = "Message must be 200 characters or less.";
     if (target === "district" && !districtId) e.district = "Please select a district.";
     return e;
   }
@@ -60,8 +64,12 @@ export default function QuickNotificationForm({ onClose, onSuccess }: Props) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: title.trim(),
-          message: message.trim(),
+          title: title.en.trim(),
+          title_si: title.si.trim() || null,
+          title_ta: title.ta.trim() || null,
+          message: message.en.trim(),
+          message_si: message.si.trim() || null,
+          message_ta: message.ta.trim() || null,
           target,
           district_id: target === "district" ? Number(districtId) : null,
         }),
@@ -93,6 +101,11 @@ export default function QuickNotificationForm({ onClose, onSuccess }: Props) {
 
   return (
     <div className="flex flex-col gap-5 p-6">
+      <div>
+        <label className="mb-1.5 block text-sm font-semibold text-gray-700">Content Language</label>
+        <LanguageTabs active={lang} onChange={setLang} />
+      </div>
+
       {/* Info banner */}
       <div className="flex items-start gap-2.5 bg-blue-50 border border-blue-100 rounded-xl p-3">
         <MdInfoOutline className="text-blue-500 text-lg shrink-0 mt-0.5" />
@@ -124,17 +137,17 @@ export default function QuickNotificationForm({ onClose, onSuccess }: Props) {
         <label className="mb-1.5 block text-sm font-semibold text-gray-700">
           Title <span className="text-red-500">*</span>
           <span className="ml-2 text-xs font-normal text-gray-400">
-            {title.length}/60
+            {title[lang].length}/60
           </span>
         </label>
         <input
           type="text"
-          value={title}
+          value={title[lang]}
           onChange={(e) => {
-            setTitle(e.target.value);
+            setTitle((prev) => ({ ...prev, [lang]: e.target.value }));
             if (errors.title) setErrors({ ...errors, title: "" });
           }}
-          placeholder="e.g. Severe Weather Alert"
+          placeholder={lang === "si" ? "උදා: කාලගුණ අනතුරු ඇඟවීම" : lang === "ta" ? "உ.தா. கடும் வானிலை எச்சரிக்கை" : "e.g. Severe Weather Alert"}
           maxLength={70}
           className={`w-full rounded-xl border px-4 py-3 text-sm outline-none focus:ring-2 ${
             errors.title
@@ -150,16 +163,16 @@ export default function QuickNotificationForm({ onClose, onSuccess }: Props) {
         <label className="mb-1.5 block text-sm font-semibold text-gray-700">
           Message <span className="text-red-500">*</span>
           <span className="ml-2 text-xs font-normal text-gray-400">
-            {message.length}/200
+            {message[lang].length}/200
           </span>
         </label>
         <textarea
-          value={message}
+          value={message[lang]}
           onChange={(e) => {
-            setMessage(e.target.value);
+            setMessage((prev) => ({ ...prev, [lang]: e.target.value }));
             if (errors.message) setErrors({ ...errors, message: "" });
           }}
-          placeholder="What do you want to tell users?"
+          placeholder={lang === "si" ? "පරිශීලකයින්ට දැනුම් දීමට අවශ්‍ය දේ..." : lang === "ta" ? "பயனர்களிடம் சொல்ல விரும்புவது என்ன?" : "What do you want to tell users?"}
           rows={3}
           maxLength={220}
           className={`w-full rounded-xl border px-4 py-3 text-sm outline-none focus:ring-2 resize-none ${
@@ -230,7 +243,7 @@ export default function QuickNotificationForm({ onClose, onSuccess }: Props) {
       )}
 
       {/* Preview */}
-      {(title || message) && (
+      {(title.en || message.en) && (
         <div>
           <label className="mb-1.5 block text-xs font-semibold text-gray-500 uppercase tracking-wide">
             Preview
@@ -243,10 +256,10 @@ export default function QuickNotificationForm({ onClose, onSuccess }: Props) {
               <div className="min-w-0 flex-1">
                 <p className="text-xs text-gray-400 mb-0.5">First Aid • now</p>
                 <p className="text-sm font-semibold text-gray-900 truncate">
-                  {title || "Notification title"}
+                  {title[lang] || title.en || "Notification title"}
                 </p>
                 <p className="text-xs text-gray-600 line-clamp-2 mt-0.5">
-                  {message || "Notification body will appear here..."}
+                  {message[lang] || message.en || "Notification body will appear here..."}
                 </p>
               </div>
             </div>

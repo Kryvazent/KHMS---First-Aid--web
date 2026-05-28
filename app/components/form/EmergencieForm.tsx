@@ -39,13 +39,27 @@ export default function EmergencyForm({ onClose, emergency, onSuccess }: Props) 
   const [loadingMeta, setLoadingMeta] = useState(true);
 
   const [name, setName] = useState<MultiLangText>(
-    emergency ? { en: emergency.name, si: "", ta: "" } : { ...EMPTY_MULTILANG }
+    emergency
+      ? { en: emergency.name, si: emergency.name_si ?? "", ta: emergency.name_ta ?? "" }
+      : { ...EMPTY_MULTILANG }
   );
   const [subtitle, setSubtitle] = useState<MultiLangText>(
-    emergency ? { en: emergency.subtitle ?? "", si: "", ta: "" } : { ...EMPTY_MULTILANG }
+    emergency
+      ? {
+        en: emergency.subtitle ?? "",
+        si: emergency.subtitle_si ?? "",
+        ta: emergency.subtitle_ta ?? "",
+      }
+      : { ...EMPTY_MULTILANG }
   );
   const [warning, setWarning] = useState<MultiLangText>(
-    emergency ? { en: emergency.warning ?? "", si: "", ta: "" } : { ...EMPTY_MULTILANG }
+    emergency
+      ? {
+        en: emergency.warning ?? "",
+        si: emergency.warning_si ?? "",
+        ta: emergency.warning_ta ?? "",
+      }
+      : { ...EMPTY_MULTILANG }
   );
   const [icon, setIcon] = useState(emergency?.icon ?? "warning");
   const [color, setColor] = useState(emergency?.color ?? "#FEF2F2");
@@ -58,8 +72,12 @@ export default function EmergencyForm({ onClose, emergency, onSuccess }: Props) 
       return emergency.steps.map((s) => ({
         tempId: s.id,
         step_id: s.step_id,
-        title: { en: s.title, si: "", ta: "" },
-        instruction: { en: s.instruction, si: "", ta: "" },
+        title: { en: s.title, si: s.title_si ?? "", ta: s.title_ta ?? "" },
+        instruction: {
+          en: s.instruction,
+          si: s.instruction_si ?? "",
+          ta: s.instruction_ta ?? "",
+        },
         image_url: s.image_url ?? "",
         video_url: s.video_url ?? "",
         icon: s.icon ?? "warning",
@@ -121,6 +139,12 @@ export default function EmergencyForm({ onClose, emergency, onSuccess }: Props) 
     );
   }
 
+  function localizedLabel(value: string, si?: string | null, ta?: string | null) {
+    if (lang === "si") return si || value;
+    if (lang === "ta") return ta || value;
+    return value;
+  }
+
   function validate() {
     const e: Record<string, string> = {};
     if (!name.en.trim()) e.name_en = "English name is required.";
@@ -139,8 +163,14 @@ export default function EmergencyForm({ onClose, emergency, onSuccess }: Props) 
 
     const emergencyPayload = {
       name: name.en,
+      name_si: name.si || null,
+      name_ta: name.ta || null,
       subtitle: subtitle.en || null,
+      subtitle_si: subtitle.si || null,
+      subtitle_ta: subtitle.ta || null,
       warning: warning.en || null,
+      warning_si: warning.si || null,
+      warning_ta: warning.ta || null,
       icon,
       color,
       severity_level_id: Number(severityLevelId),
@@ -162,7 +192,11 @@ export default function EmergencyForm({ onClose, emergency, onSuccess }: Props) 
     const stepsPayload = steps.map((s, idx) => ({
       step_id: idx + 1,
       title: s.title.en,
+      title_si: s.title.si || null,
+      title_ta: s.title.ta || null,
       instruction: s.instruction.en,
+      instruction_si: s.instruction.si || null,
+      instruction_ta: s.instruction.ta || null,
       image_url: s.image_url || null,
       video_url: s.video_url || null,
       emergency_id: emergencyId,
@@ -305,7 +339,7 @@ export default function EmergencyForm({ onClose, emergency, onSuccess }: Props) 
                     : "border-gray-200 text-gray-500 hover:border-gray-300"
                 }`}
               >
-                {sl.level}
+                {localizedLabel(sl.level, sl.level_si, sl.level_ta)}
               </button>
             ))}
           </div>
